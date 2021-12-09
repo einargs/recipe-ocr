@@ -1,0 +1,5 @@
+.stack-work/
+*~
+test-imgs/*
+TAGS
+db/test.db
