@@ -39,11 +39,13 @@ export function getRecipe(id) {
 
 export function updateRecipe(id, {name, tags, files}) {
   const formData = new FormData()
-  formData.append("name", name)
-  formData.append("tags", tags)
+  formData.set("name", name)
+  formData.set("tags", tags)
+
   for (const file of files) {
     formData.append("images", file, file.name)
   }
+
   return fetch("/api/recipes/" + id, {
     method: "PUT",
     cache: "no-cache",

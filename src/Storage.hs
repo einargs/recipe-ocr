@@ -6,6 +6,7 @@ module Storage
   , insertRecipe
   , getRecipeImage
   , updateRecipe
+  , deleteRecipe
   ) where
 
 import Control.Monad
@@ -18,7 +19,6 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import System.FilePath (takeExtension)
 import Data.Foldable
 import Data.Kind
 import Database.Persist
@@ -90,7 +90,7 @@ data RecipeSearch = RecipeSearch
   , searchQuery :: Maybe Text
   }
 
-searchRecipes :: RecipeSearch -> App [Recipe]
+searchRecipes :: RecipeSearch -> App (Int, [Recipe])
 searchRecipes RecipeSearch {..} = runDB $ do
   let options = [LimitTo searchLimit] <> case searchOffset of
         Just offset -> [OffsetBy offset]
@@ -99,7 +99,11 @@ searchRecipes RecipeSearch {..} = runDB $ do
         Just str -> [DbRecipeBody `like` T.concat ["%", str, "%"]]
         Nothing -> []
   dbRecipes <- selectList filters options
-  traverse loadFullRecipe dbRecipes
+  totalCount <- count filters
+  -- TODO: optimize these into one load using `<-.` to check for the whole
+  -- list of IDs.
+  recipes <- traverse loadFullRecipe dbRecipes
+  pure $ (totalCount, recipes)
 
 getRecipe :: RecipeId -> App (Maybe Recipe)
 getRecipe (RecipeId rid) = runDB $ do
@@ -108,32 +112,44 @@ getRecipe (RecipeId rid) = runDB $ do
     Just recipe -> Just <$> loadFullRecipe recipe
     Nothing -> pure Nothing
 
+loadPreImage :: PreImage -> App RecipeImage
+loadPreImage PreImage{..} = do
+  image <- liftIO $ BS.readFile preImagePath
+  pure $ RecipeImage
+    { recipeImageExt = preImageExt
+    , recipeImageData = image
+    }
+
+toDbImages :: DbRecipeId -> [RecipeImage] -> [DbRecipeImage]
+toDbImages dbRecipeId = imap f
+  where f i RecipeImage {..} = DbRecipeImage
+          { dbRecipeImageRecipeId = dbRecipeId
+          , dbRecipeImageIndex = i
+          , dbRecipeImageExt = recipeImageExt
+          , dbRecipeImageData = recipeImageData
+          }
+
 insertRecipe :: PreRecipe -> App Recipe
 insertRecipe PreRecipe
   { preRecipeName = name
   , preRecipeTags = tags
-  , preRecipeImagePaths = imagePaths
+  , preRecipeImages = preImages
   } = do
-    body <- T.intercalate " " <$> traverse ocr imagePaths
-    images <- traverse loadImage imagePaths
+    imageTexts <- traverse ocr $ preImagePath <$> preImages
+    let body = T.intercalate " " imageTexts
+    images <- traverse loadPreImage preImages
     runDB $ do
       dbRecipeId <- insert $ DbRecipe
         { dbRecipeName = name
         , dbRecipeBody = body
         }
 
-      let imgf i RecipeImage {..} = DbRecipeImage
-            { dbRecipeImageRecipeId = dbRecipeId
-            , dbRecipeImageIndex = i
-            , dbRecipeImageExt = recipeImageExt
-            , dbRecipeImageData = recipeImageData
-            }
-          dbImages = imap imgf images
-          tagf t = DbRecipeTag
+      let tagf t = DbRecipeTag
             { dbRecipeTagName = t
             , dbRecipeTagRecipeId = dbRecipeId
             }
           dbTags = tagf <$> tags
+          dbImages = toDbImages dbRecipeId images
 
       traverse_ insert_ dbImages
       traverse_ insert_ dbTags
@@ -145,13 +161,6 @@ insertRecipe PreRecipe
         , recipeTags = tags
         , recipeImages = images
         }
-  where
-    loadImage path = do
-      image <- liftIO $ BS.readFile path
-      pure $ RecipeImage
-        { recipeImageExt = T.pack $ takeExtension path
-        , recipeImageData = image
-        }
 
 getRecipeImage :: RecipeId -> Int -> App (Maybe RecipeImage)
 getRecipeImage (RecipeId rid) idx = runDB $ do
@@ -160,14 +169,35 @@ getRecipeImage (RecipeId rid) idx = runDB $ do
     , DbRecipeImageIndex ==. idx] []
   pure $ toRecipeImage . entityVal <$> mbDbImage
 
-updateRecipe :: RecipeId -> RecipeUpdate -> App ()
-updateRecipe (RecipeId rid) RecipeUpdate {..} = runDB $ do
-  update dbRecipeId
-    [ DbRecipeName =. recipeUpdateName
-    , DbRecipeBody =. recipeUpdateBody
-    ]
+deleteRecipe :: RecipeId -> App ()
+deleteRecipe (RecipeId rid) = runDB $ do
+  deleteWhere [DbRecipeImageRecipeId ==. dbRecipeId]
   deleteWhere [DbRecipeTagRecipeId ==. dbRecipeId]
-  insertMany_ $ mkTag <$> recipeUpdateTags
+  delete dbRecipeId
+  where
+    dbRecipeId :: DbRecipeId
+    dbRecipeId = toSqlKey rid
+
+updateRecipe :: RecipeId -> PreRecipe -> App ()
+updateRecipe (RecipeId rid) PreRecipe
+  { preRecipeName = name
+  , preRecipeTags = tags
+  , preRecipeImages = preImages
+  } = do
+  images <- traverse loadPreImage preImages
+  imageTexts <- traverse ocr $ preImagePath <$> preImages
+  let body = T.intercalate " " imageTexts
+
+  runDB $ do
+    update dbRecipeId
+      [ DbRecipeName =. name
+      , DbRecipeBody =. body
+      ]
+    deleteWhere [DbRecipeTagRecipeId ==. dbRecipeId]
+    insertMany_ $ mkTag <$> tags
+    deleteWhere [DbRecipeImageRecipeId ==. dbRecipeId]
+    insertMany_ $ toDbImages dbRecipeId images
+  
   where
     mkTag name = DbRecipeTag
       { dbRecipeTagName = name

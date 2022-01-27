@@ -10,6 +10,6 @@ main :: IO ()
 main = do
   putStrLn "Starting"
   runApp Config
-    { sqliteFile = "test.db"
-    , configPort = 8080
+    { sqliteFile = "db/test.db"
+    , configPort = 8000
     }

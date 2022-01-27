@@ -22,13 +22,18 @@
         @click="goToRecipe(recipe)"
         class="recipe-item">
         <span>{{recipe.name}}</span>
-        <div class="recipe-item__actions">
+        <el-button-group>
+          <el-button
+            @click.stop="editRecipe(recipe)"
+            circle>
+            <el-icon><i-ep-edit /></el-icon>
+          </el-button>
           <el-button
             @click.stop="deleteRecipe(recipe)"
             circle>
             <el-icon><i-ep-delete /></el-icon>
           </el-button>
-        </div>
+        </el-button-group>
       </div>
     </div>
     <el-pagination
@@ -60,7 +65,13 @@ export default {
   methods: {
     goToRecipe(recipe) {
       this.$router.push({ name: "recipe-view", params: {
-        id: recipe.id
+        id: recipe.id,
+      }})
+    },
+
+    editRecipe(recipe) {
+      this.$router.push({ name: "recipe-edit", params: {
+        id: recipe.id,
       }})
     },
 

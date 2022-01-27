@@ -1,5 +1,5 @@
 <template>
-  <page-skeleton :breadcrumbs="breadcrumbs">
+  <page-skeleton>
     <template #breadcrumbs>
       <el-breadcrumb-item :to="{ name: 'recipe-list' }">
         My Recipes
@@ -14,12 +14,14 @@
         type="primary">Edit</el-button>
     </template>
     <h1>{{recipe.name}}</h1>
-    <div>
-      <el-image
-        v-for="url in recipe.images"
-        :key="url"
-        fit="fill"
-        :src="url"></el-image>
+    <div class="image-list">
+      <el-row v-for="url in recipe.images" :key="url">
+        <el-col :span="24" :md="{span: 18, offset: 3}">
+          <el-image
+            fit="fill"
+            :src="url" />
+        </el-col>
+      </el-row>
     </div>
     <el-collapse>
       <el-collapse-item title="Content">

@@ -4,7 +4,10 @@
       <el-breadcrumb-item :to="{ name: 'recipe-list' }">
         My Recipes
       </el-breadcrumb-item>
-      <el-breadcrumb-item :to="recipeSlug">
+      <el-breadcrumb-item :to="{
+        name: 'recipe-view',
+        params: { id: $route.params.id },
+      }">
         {{ recipe.name }}
       </el-breadcrumb-item>
       <el-breadcrumb-item>
@@ -12,55 +15,24 @@
       </el-breadcrumb-item>
     </template>
     <el-form ref="form" :model="recipe">
-      <el-form-item label="Name">
+      <el-form-item label="Name" prop="name"
+        :rules="[{
+          required: true,
+          message: 'Please input recipe name',
+          trigger: 'blur'
+        }]">
         <el-input v-model="recipe.name" />
       </el-form-item>
-      <el-form-item label="Tags">
+      <el-form-item label="Tags" prop="tags">
         <el-tooltip class="tooltip" effect="dark"
           placement="bottom" content="comma separated list">
           <el-input v-model="recipe.tags" />
         </el-tooltip>
       </el-form-item>
     </el-form>
-    <div class="image-list">
-      <el-row v-for="(image, idx) in recipe.images" :key="image">
-        <el-col :span="2" :md="{span: 2, offset: 2}">
-          <div class="image-buttons">
-            <el-button type="text" round
-              @click="moveImage(idx, idx-1)"
-              :disabled="idx == 0">
-              <el-icon><i-ep-caret-top /></el-icon>
-            </el-button>
-            <el-button type="text" round @click="deleteImage(idx)">
-              <el-icon><i-ep-delete-filled /></el-icon>
-            </el-button>
-            <el-button type="text" round
-              @click="moveImage(idx, idx+1)"
-              :disabled="idx == (recipe.images.length - 1)">
-              <el-icon><i-ep-caret-bottom /></el-icon>
-            </el-button>
-          </div>
-        </el-col>
-        <el-col :span="22" :md="{span: 18, offset: 0}">
-          <el-image :src="image.url" />
-        </el-col>
-      </el-row>
-    </div>
-    <el-upload
-      class="image-upload"
-      drag
-      action="#"
-      :auto-upload="false"
-      :on-change="addNewImage"
-      :show-file-list="false"
-      >
-      <el-icon class="el-icon--upload">
-        <i-ep-upload-filled />
-      </el-icon>
-      <div class="el-upload__text">
-        Drop file here or <em>click to upload</em>
-      </div>
-    </el-upload>
+    <image-list
+      ref="imageList"
+      v-model="recipe.images" />
     <el-button
       type="primary"
       size="large"
@@ -75,20 +47,12 @@
 
 <script>
 import PageSkeleton from "./PageSkeleton.vue"
+import ImageList from "./ImageList.vue"
 import { getRecipe, updateRecipe } from "../Api.js"
-
-async function getFile(imageFile) {
-  if (!imageFile.file) {
-    let response = await fetch(imageFile.url)
-    return response.blob()
-  } else {
-    return imageFile.file
-  }
-}
 
 export default {
   name: "RecipeEdit",
-  components: {PageSkeleton},
+  components: {PageSkeleton, ImageList},
   data() {
     return {
       saving: false,
@@ -99,47 +63,36 @@ export default {
       },
     }
   },
-  computed: {
-    recipeSlug() {
-      return {
-        name: "recipe-view",
-        params: { id: this.$route.params.id }
-      }
-    },
-  },
   methods: {
-    addNewImage(file, fileList) {
-      this.$data.recipe.images.push({
-        url: URL.createObjectURL(file.raw),
-        file: file.raw,
-      })
-    },
-    deleteImage(idx) {
-      this.$data.recipe.images.splice(idx, 1)
-    },
-    moveImage(from, to) {
-      let images = this.$data.recipe.images
-      let img = images[from]
-      images[from] = images[to]
-      images[to] = img
-    },
     async save() {
       this.$data.saving = true
+
+      let isValid = false
+
       try {
-        let files = await Promise.all(this.$data.recipe.images.map(getFile))
-        await updateRecipe(this.$route.params.id, {
-          name: this.recipe.name,
-          tags: this.recipe.tags,
-          files,
-        })
-        this.$router.push({
-          name: "recipe-view",
-          params: { id: this.$route.params.id },
-        })
-      } catch (err) {
-        console.error(err)
-        ElMessage("An error occured saving the recipe. Check your network")
+        isValid = await this.$refs.form.validate()
+      } catch (validationError) {
+        ElMessage.error(Object.values(validationError).flat()[0].message)
       }
+
+      if (isValid) {
+        try {
+          let files = await this.$refs.imageList.loadFiles()
+          await updateRecipe(this.$route.params.id, {
+            name: this.recipe.name,
+            tags: this.recipe.tags,
+            files,
+          })
+          this.$router.push({
+            name: "recipe-view",
+            params: { id: this.$route.params.id },
+          })
+        } catch (err) {
+          console.error(err)
+          ElMessage.error("An error occured saving the recipe. Check your network")
+        }
+      }
+
       this.$data.saving = false
     },
   },
@@ -150,6 +103,10 @@ export default {
         this.$data.recipe.tags = recipe.tags.join(", ")
         this.$data.recipe.images = recipe.images
           .map(url => ({ url }))
+      })
+      .catch(err => {
+        console.error(err)
+        ElMessage.error("An error occured getting the recipe. Check your network.")
       })
   },
 }

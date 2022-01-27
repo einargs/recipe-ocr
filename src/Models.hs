@@ -4,8 +4,9 @@ module Models
   , Recipe(..)
   , RecipeId(..)
   , PreRecipe(..)
+  , PreImage(..)
   , RecipeOut(..)
-  , RecipeUpdate(..)
+  , RecipeSlice(..)
   , toRecipeOut
   ) where
 
@@ -21,6 +22,8 @@ import Data.Aeson
 import Servant.API (FromHttpApiData)
 import Servant.Multipart
 import Data.List.Index (imap)
+import System.FilePath (takeExtension, takeBaseName)
+import Debug.Trace
 
 import App
 
@@ -65,58 +68,60 @@ toRecipeOut Recipe {..} = RecipeOut
   , recipeOutImages = imap imgUrl recipeImages
   }
   where imgUrl i RecipeImage {..} = T.concat
-          [ "/recipes/"
+          [ "/api/recipes/"
           , T.pack $ show $ rawRecipeId recipeId
           , "/images/"
           , T.pack $ show i
-          , "."
-          , recipeImageExt
+          --, recipeImageExt
           ]
 
 instance ToJSON RecipeOut where
   toJSON = genericToJSON defaultOptions
     { fieldLabelModifier = stripPrefix "recipeOut" }
 
+data RecipeSlice = RecipeSlice
+  -- the total amount of recipes that register for a query
+  { recipeSliceTotal :: Int
+  -- this specific page of recipes
+  , recipeSliceRecipes :: [RecipeOut]
+  } deriving (Show, Generic)
+
+instance ToJSON RecipeSlice where
+  toJSON = genericToJSON defaultOptions
+    { fieldLabelModifier = stripPrefix "recipeSlice" }
+
+data PreImage = PreImage
+  { preImageExt :: Text
+  , preImagePath :: FilePath
+  } deriving Show
+
+imagesFromMultipart :: Text -> MultipartData Tmp -> [PreImage]
+imagesFromMultipart name form = 
+  toImg <$> filter ((== name) . fdInputName) (files form)
+  where
+    toImg FileData{..} = PreImage
+      { preImageExt = T.pack $ takeExtension $ T.unpack fdFileName
+      , preImagePath = fdPayload
+      }
+
 data PreRecipe = PreRecipe
   { preRecipeName :: Text
   , preRecipeTags :: [Text]
-  , preRecipeImagePaths :: [FilePath]
+  , preRecipeImages :: [PreImage]
   } deriving Show
-
-data RecipeIn = RecipeIn
-  { recipeInName :: Text
-  , recipeInTags :: [Text]
-  , recipeInImageNames :: [Text]
-  } deriving (Show, Generic)
-
-instance FromJSON RecipeIn where
-  parseJSON = genericParseJSON defaultOptions
-    { fieldLabelModifier = stripPrefix "recipeIn" }
 
 instance FromMultipart Tmp PreRecipe where
   fromMultipart form = do
-    recipeTxt <- lookupInput "recipe" form
-    RecipeIn {..} <- case tdecode recipeTxt of
-      Nothing -> Left "JSON in input \"recipe\" did not decode to RecipeIn."
-      Just v -> Right v
-    let f = fmap fdPayload . flip lookupFile form
-    imagePaths <- traverse f recipeInImageNames
+    -- traceShowM $ files form
+    name <- lookupInput "name" form
+    rawTags <- lookupInput "tags" form
     pure $ PreRecipe
-      { preRecipeName = recipeInName
-      , preRecipeTags = recipeInTags
-      , preRecipeImagePaths = imagePaths
+      { preRecipeName = name
+      , preRecipeTags = splitTags rawTags
+      , preRecipeImages = imagesFromMultipart "images" form
       }
-    where tdecode = decode . toLazyByteString . encodeUtf8Builder
-
-data RecipeUpdate = RecipeUpdate
-  { recipeUpdateName :: Text
-  , recipeUpdateTags :: [Text]
-  , recipeUpdateBody :: Text
-  } deriving (Show, Generic)
-
-instance FromJSON RecipeUpdate where
-  parseJSON = genericParseJSON defaultOptions
-    { fieldLabelModifier = stripPrefix "recipeUpdate" }
+    where
+      splitTags = fmap T.strip . T.splitOn ","
 
 newtype RecipeId = RecipeId { rawRecipeId :: Int64 }
   deriving (Show, Eq, Ord)

@@ -8,10 +8,14 @@ import Data.ByteString (ByteString)
 import Servant.API
 import Servant.Server
 import Servant.Multipart
+import Network.Wai (Middleware)
 import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Cors (simpleCors)
 import Data.Functor
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import qualified Data.Text.IO as TIO
+import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 
 import App
 import Models
@@ -20,27 +24,31 @@ import qualified Storage as S
 type RecipeAPI
   -- Get a recipe
      = Capture "recipeId" RecipeId :> Get '[JSON] RecipeOut
+  -- Post a recipe
+  :<|> MultipartForm Tmp PreRecipe :> Post '[JSON] RecipeOut
   -- Get the image for a recipe
   :<|> Capture "recipeId" RecipeId :> "images"
        :> Capture "imageIndex" Int :> Get '[OctetStream] ByteString
-  -- Post a recipe
-  :<|> MultipartForm Tmp PreRecipe :> Post '[JSON] RecipeOut
   -- Put a recipe update
-  :<|> Capture "recipeId" RecipeId :> ReqBody '[JSON] RecipeUpdate
-       :> Put '[JSON] NoContent
+  :<|> Capture "recipeId" RecipeId :> MultipartForm Tmp PreRecipe
+       :> PutNoContent
+  -- Delete a recipe
+  :<|> Capture "recipeId" RecipeId :> DeleteNoContent
   -- Get and search all recipes
-  :<|> QueryParam "limit" Int :> QueryParam "offset" Int :> QueryParam "query" Text :> Get '[JSON] [RecipeOut]
+  :<|> QueryParam "limit" Int :> QueryParam "offset" Int
+    :> QueryParam "query" Text :> Get '[JSON] RecipeSlice
 
-type FullAPI = "recipes" :> RecipeAPI
+type FullAPI = "api" :> "recipes" :> RecipeAPI
 
 fullAPI :: Proxy FullAPI
 fullAPI = Proxy
 
 apiServer :: ServerT FullAPI App
 apiServer = getRecipe
-          :<|> getRecipeImage
           :<|> uploadRecipe
+          :<|> getRecipeImage
           :<|> putRecipe
+          :<|> deleteRecipe
           :<|> searchRecipes
   where
     getRecipe :: RecipeId -> App RecipeOut
@@ -53,16 +61,22 @@ apiServer = getRecipe
     uploadRecipe :: PreRecipe -> App RecipeOut
     uploadRecipe = fmap toRecipeOut . S.insertRecipe
 
-    putRecipe :: RecipeId -> RecipeUpdate -> App NoContent
+    putRecipe :: RecipeId -> PreRecipe -> App NoContent
     putRecipe rid rupdate = S.updateRecipe rid rupdate $> NoContent
+    
+    deleteRecipe :: RecipeId -> App NoContent
+    deleteRecipe rid = S.deleteRecipe rid $> NoContent 
 
-    searchRecipes :: Maybe Int -> Maybe Int -> Maybe Text -> App [RecipeOut]
-    searchRecipes mbLimit mbOffset mbQuery =
-      fmap toRecipeOut <$> S.searchRecipes S.RecipeSearch
+    searchRecipes :: Maybe Int -> Maybe Int -> Maybe Text -> App RecipeSlice
+    searchRecipes mbLimit mbOffset mbQuery = do
+      (count, recipes) <- S.searchRecipes S.RecipeSearch
         { searchOffset = mbOffset
         , searchLimit = fromMaybe 20 mbLimit
         , searchQuery = mbQuery
         }
+      pure $ RecipeSlice
+        { recipeSliceTotal = count
+        , recipeSliceRecipes = toRecipeOut <$> recipes }
 
     unwrapWith404 :: App (Maybe a) -> App a
     unwrapWith404 m = m >>= \case
@@ -70,7 +84,17 @@ apiServer = getRecipe
       Nothing -> throwError err404
 
 app :: AppEnv -> Application
-app env = serve fullAPI $ hoistServer fullAPI (appToHandler env) apiServer
+app env =
+  showRequest
+  $ logStdoutDev
+  $ simpleCors
+  $ serve fullAPI
+  $ hoistServer fullAPI (appToHandler env) apiServer
+  where
+    showRequest :: Middleware
+    showRequest app req f = do
+      print req
+      app req f
 
 runApp :: Config -> IO ()
 runApp cfg = withAppEnv cfg $ run (configPort cfg) . app

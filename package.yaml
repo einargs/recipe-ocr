@@ -37,6 +37,8 @@ dependencies:
 - servant-server >= 0.18.2
 - servant-multipart >= 0.12
 - wai >= 3.2
+- wai-extra >= 3.1
+- wai-cors >= 0.2.7
 - warp >= 3.3
 - aeson >= 1.5
 - resource-pool >= 0.2.3

@@ -8,75 +8,85 @@
         Add Recipe
       </el-breadcrumb-item>
     </template>
-    <el-form ref="form" :model="form" label-width="120px">
-      <el-form-item label="Name">
+    <el-form ref="form" :model="form">
+      <el-form-item label="Name" prop="name"
+        :rules="[{
+          required: true,
+          message: 'Please input recipe name',
+          trigger: 'blur'
+        }]">
         <el-input v-model="form.name" />
       </el-form-item>
-      <el-form-item label="Tags">
+      <el-form-item label="Tags" prop="tags">
         <el-tooltip class="tooltip" effect="dark"
           placement="bottom" content="comma separated list">
           <el-input v-model="form.tags" />
         </el-tooltip>
       </el-form-item>
-      <el-form-item label="Pictures">
-        <el-upload
-          action="#"
-          list-type="picture-card"
-          :auto-upload="false"
-          :on-change="updateFileList"
-          ref="fileInput">
-          <template #default>
-            <el-icon><i-ep-plus /></el-icon>
-          </template>
-          <template #file="{ file }">
-            <img class="el-upload-list__item-thumbnail" :src="file.url" />
-          </template>
-        </el-upload>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit">Create</el-button>
-      </el-form-item>
     </el-form>
+    <image-list v-model="fileList" />
+    <el-button
+      type="primary"
+      size="large"
+      class="create-button"
+      circle
+      @click="onSubmit">
+      <el-icon><i-mdi-content-save /></el-icon>
+    </el-button>
   </page-skeleton>
 </template>
 
 <script>
 import PageSkeleton from "./PageSkeleton.vue"
+import ImageList from "./ImageList.vue"
 import { postRecipe } from "../Api.js"
 
 export default {
   name: 'RecipeAdd',
-  components: {PageSkeleton},
+  components: {PageSkeleton, ImageList},
   data() {
     return {
       form: {
         name: "",
         tags: "",
-        fileList: [],
       },
+      fileList: [],
     }
   },
   methods: {
-    updateFileList(file, fileList) {
-      this.$data.form.fileList = fileList
-    },
-    onSubmit() {
-      postRecipe(
-        this.$data.form.name, 
-        this.$data.form.tags,
-        this.$data.form.fileList.map(f => f.raw)
-      )
-        .then(() => {
+    async onSubmit() {
+      let isValid = false
+
+      try {
+        isValid = await this.$refs.form.validate()
+      } catch (validationError) {
+        ElMessage.error(Object.values(validationError).flat()
+          .map(e => e.message).join("\n"))
+      }
+
+      if (isValid) {
+        try {
+          await postRecipe(
+            this.$data.form.name, 
+            this.$data.form.tags,
+            this.$data.fileList.map(f => f.file)
+          )
           this.$router.push({ name: "recipe-list" })
-        })
-        .catch(err => {
+        } catch (err) {
           console.error(err)
-          ElMessage("An error occured uploading the recipe. Check your network")
-        })
+          ElMessage.error("An error occured uploading the recipe. Check your network")
+        }
+      }
     },
   },
 }
 </script>
 
 <style>
+.create-button {
+  font-size: 1.6em;
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+}
 </style>
