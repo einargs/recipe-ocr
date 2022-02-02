@@ -69,6 +69,7 @@ library
     , base >=4.7 && <5
     , bytestring >=0.10.12
     , containers >=0.6.2
+    , esqueleto >=3.5
     , filepath >=1.4
     , ilist >=0.4
     , monad-logger >=0.3.36
@@ -85,6 +86,7 @@ library
     , text >=1.2
     , transformers >=0.5.6
     , wai >=3.2
+    , wai-app-static >=3.1
     , wai-cors >=0.2.7
     , wai-extra >=3.1
     , warp >=3.3
@@ -132,6 +134,7 @@ executable recipe-ocr-exe
     , base >=4.7 && <5
     , bytestring >=0.10.12
     , containers >=0.6.2
+    , esqueleto >=3.5
     , filepath >=1.4
     , ilist >=0.4
     , monad-logger >=0.3.36
@@ -149,6 +152,7 @@ executable recipe-ocr-exe
     , text >=1.2
     , transformers >=0.5.6
     , wai >=3.2
+    , wai-app-static >=3.1
     , wai-cors >=0.2.7
     , wai-extra >=3.1
     , warp >=3.3
@@ -197,6 +201,7 @@ test-suite recipe-ocr-test
     , base >=4.7 && <5
     , bytestring >=0.10.12
     , containers >=0.6.2
+    , esqueleto >=3.5
     , filepath >=1.4
     , ilist >=0.4
     , monad-logger >=0.3.36
@@ -214,6 +219,7 @@ test-suite recipe-ocr-test
     , text >=1.2
     , transformers >=0.5.6
     , wai >=3.2
+    , wai-app-static >=3.1
     , wai-cors >=0.2.7
     , wai-extra >=3.1
     , warp >=3.3

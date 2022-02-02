@@ -1,12 +1,12 @@
 module Api
-  ( app
-  , runApp
+  ( runApp
   ) where
 
 import Data.Proxy
 import Data.ByteString (ByteString)
 import Servant.API
 import Servant.Server
+import Servant.Server.StaticFiles
 import Servant.Multipart
 import Network.Wai (Middleware)
 import Network.Wai.Handler.Warp (run)
@@ -16,6 +16,8 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text.IO as TIO
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
+import Network.Wai.Application.Static (defaultWebAppSettings)
+import WaiAppStatic.Types (ssLookupFile, unsafeToPiece, Pieces, LookupResult(..))
 
 import App
 import Models
@@ -36,14 +38,13 @@ type RecipeAPI
   :<|> Capture "recipeId" RecipeId :> DeleteNoContent
   -- Get and search all recipes
   :<|> QueryParam "limit" Int :> QueryParam "offset" Int
-    :> QueryParam "query" Text :> Get '[JSON] RecipeSlice
+    :> QueryParams "tags" Text :> QueryParam "query" Text
+    :> Get '[JSON] RecipeSlice
 
-type FullAPI = "api" :> "recipes" :> RecipeAPI
+type FullAPI =
+  "api" :> "recipes" :> RecipeAPI
 
-fullAPI :: Proxy FullAPI
-fullAPI = Proxy
-
-apiServer :: ServerT FullAPI App
+apiServer :: ServerT RecipeAPI App
 apiServer = getRecipe
           :<|> uploadRecipe
           :<|> getRecipeImage
@@ -67,12 +68,14 @@ apiServer = getRecipe
     deleteRecipe :: RecipeId -> App NoContent
     deleteRecipe rid = S.deleteRecipe rid $> NoContent 
 
-    searchRecipes :: Maybe Int -> Maybe Int -> Maybe Text -> App RecipeSlice
-    searchRecipes mbLimit mbOffset mbQuery = do
+    searchRecipes :: Maybe Int -> Maybe Int -> [Text]
+                  -> Maybe Text -> App RecipeSlice
+    searchRecipes mbLimit mbOffset tags mbQuery = do
       (count, recipes) <- S.searchRecipes S.RecipeSearch
         { searchOffset = mbOffset
         , searchLimit = fromMaybe 20 mbLimit
         , searchQuery = mbQuery
+        , searchTags = tags
         }
       pure $ RecipeSlice
         { recipeSliceTotal = count
@@ -83,13 +86,34 @@ apiServer = getRecipe
       Just v -> pure v
       Nothing -> throwError err404
 
-app :: AppEnv -> Application
-app env =
+type FileHost = Raw
+
+fileHostServer :: Config -> ServerT FileHost App
+fileHostServer Config{webAppDir} = serveDirectoryWith settings where
+  base = defaultWebAppSettings webAppDir
+  baseLookup = ssLookupFile base
+  lookupFile' :: Pieces -> IO LookupResult
+  lookupFile' ps = do
+    print ps
+    initial <- baseLookup ps
+    case initial of
+      LRNotFound -> baseLookup [unsafeToPiece "index.html"]
+      _ -> pure initial
+  settings = base { ssLookupFile = lookupFile' }
+
+type FullSite = FullAPI :<|> FileHost
+
+fullSiteServer :: Config -> ServerT FullSite App
+fullSiteServer cfg = apiServer :<|> fileHostServer cfg
+
+serverToApp :: HasServer api '[]
+            => Proxy api -> ServerT api App -> AppEnv -> Application
+serverToApp api server env = 
   showRequest
   $ logStdoutDev
   $ simpleCors
-  $ serve fullAPI
-  $ hoistServer fullAPI (appToHandler env) apiServer
+  $ serve api
+  $ hoistServer api (appToHandler env) server
   where
     showRequest :: Middleware
     showRequest app req f = do
@@ -97,4 +121,8 @@ app env =
       app req f
 
 runApp :: Config -> IO ()
-runApp cfg = withAppEnv cfg $ run (configPort cfg) . app
+runApp cfg = withAppEnv cfg $ run (configPort cfg) . app where
+  app = case envConfig cfg of
+          Production -> serverToApp (Proxy @FullSite) $ fullSiteServer cfg
+          Development -> serverToApp (Proxy @FullAPI) apiServer
+

@@ -25,7 +25,9 @@ import Database.Persist
 import Database.Persist.Sql
 import Database.Persist.Sqlite
 import Database.Persist.TH
+import qualified Database.Esqueleto.Experimental as E
 import Data.List.Index (imap)
+import Debug.Trace (traceShowM)
 
 import Models
 import App
@@ -88,8 +90,42 @@ data RecipeSearch = RecipeSearch
   { searchOffset :: Maybe Int
   , searchLimit :: Int
   , searchQuery :: Maybe Text
+  , searchTags :: [Text]
   }
 
+searchRecipes :: RecipeSearch -> App (Int, [Recipe])
+searchRecipes RecipeSearch{..} = runDB $ do
+  dbRecipes <- E.select $ E.distinct $ do
+      recipes <- recipeQuery
+      case searchOffset of
+        Just offset -> E.offset $ fromIntegral offset
+        Nothing -> pure ()
+      E.limit $ fromIntegral searchLimit
+      pure recipes
+  Just (E.Value totalCount) <- E.selectOne do
+    recipes <- recipeQuery
+    pure $ E.countDistinct (recipes E.^. DbRecipeId)
+  -- TODO: optimize these into one query.
+  recipes <- traverse loadFullRecipe dbRecipes
+  pure $ (totalCount, recipes)
+  where
+    recipeQuery :: E.SqlQuery (E.SqlExpr (Entity DbRecipe))
+    recipeQuery = do
+      (recipes E.:& tags) <- E.from $ E.table @DbRecipe
+        `E.innerJoin` E.table @DbRecipeTag
+        `E.on` (\(recipes E.:& tags) ->
+                  recipes E.^. DbRecipeId E.==. tags E.^. DbRecipeTagRecipeId)
+      case searchTags of
+        [] -> pure ()
+        _ -> E.where_ $ tags E.^. DbRecipeTagName `E.in_` E.valList searchTags
+      case searchQuery of
+        Nothing -> pure ()
+        Just str ->
+          let query = (E.%) E.++. E.val str E.++. (E.%) in
+          E.where_ (recipes E.^. DbRecipeBody `E.like` query)
+      pure recipes
+
+  {-
 searchRecipes :: RecipeSearch -> App (Int, [Recipe])
 searchRecipes RecipeSearch {..} = runDB $ do
   let options = [LimitTo searchLimit] <> case searchOffset of
@@ -104,6 +140,7 @@ searchRecipes RecipeSearch {..} = runDB $ do
   -- list of IDs.
   recipes <- traverse loadFullRecipe dbRecipes
   pure $ (totalCount, recipes)
+-}
 
 getRecipe :: RecipeId -> App (Maybe Recipe)
 getRecipe (RecipeId rid) = runDB $ do

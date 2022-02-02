@@ -8,6 +8,7 @@ module App
   , MonadError
   , throwError
   , Config(..)
+  , EnvConfig(..)
   , AppEnv(..)
   , initAppEnv
   , closeAppEnv
@@ -27,9 +28,13 @@ import Data.Text (Text)
 import Servant.Server
 import qualified Data.Pool as Pool
 
+data EnvConfig = Production | Development
+
 data Config = Config
   { sqliteFile :: Text
   , configPort :: Int
+  , webAppDir :: FilePath
+  , envConfig :: EnvConfig
   }
 
 data AppEnv = AppEnv

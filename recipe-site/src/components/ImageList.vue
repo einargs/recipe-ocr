@@ -2,7 +2,11 @@
   <div>
     <div>
       <el-row v-for="(image, idx) in modelValue" :key="image.url">
-        <el-col :span="2" :md="{span: 2, offset: 2}">
+        <el-col
+          :span="2"
+          :md="{span: 2, offset: 2}"
+          :lg="{span: 2, offset: 4}"
+          >
           <div class="image-buttons">
             <el-button type="text" round
               @click="moveImage(idx, idx-1)"
@@ -19,7 +23,11 @@
             </el-button>
           </div>
         </el-col>
-        <el-col :span="22" :md="{span: 18, offset: 0}">
+        <el-col
+          :span="22"
+          :md="18"
+          :lg="14"
+          >
           <el-image :src="image.url" />
         </el-col>
       </el-row>

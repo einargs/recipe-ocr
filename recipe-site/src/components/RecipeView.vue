@@ -16,7 +16,10 @@
     <h1>{{recipe.name}}</h1>
     <div class="image-list">
       <el-row v-for="url in recipe.images" :key="url">
-        <el-col :span="24" :md="{span: 18, offset: 3}">
+        <el-col
+          :span="24"
+          :md="{span: 18, offset: 3}"
+          :lg="{span: 14, offset: 5}">
           <el-image
             fit="fill"
             :src="url" />
