@@ -11,6 +11,10 @@
         type="primary">Add Recipe</el-button>
     </template>
     <el-input v-model="query" placeholder="Search..." @change="search" />
+    <el-tooltip class="tooltip" effect="dark"
+      placement="bottom" content="comma separated list">
+      <el-input v-model="tagString" placeholder="Tags..." @change="search" />
+    </el-tooltip>
       <!-- element-loading-text="Loading..."
       element-loading-background="rgba(0,0,0,0.8)" -->
     <div
@@ -57,6 +61,7 @@ export default {
     return {
       loading: true,
       query: "",
+      tagString: "",
       page: 1,
       total: 20,
       recipes: [],
@@ -80,7 +85,12 @@ export default {
     },
 
     search() {
-      searchRecipes(this.$data.query, this.$data.page - 1)
+      let tagString = this.$data.tagString
+      let tags = tagString.length > 0 ? tagString
+        .split(/\s*,\s*/)
+        .map(s => s.trim()) : []
+      console.log(tags)
+      searchRecipes(this.$data.query, tags, this.$data.page - 1)
         .then(({total, recipes}) => {
           this.$data.total = total
           this.$data.recipes = recipes

@@ -21,13 +21,16 @@ export function deleteRecipe(id) {
 }
 
 // page is 0-indexed.
-export function searchRecipes(query="", page=0) {
+export function searchRecipes(query="", tags=[], page=0) {
   const PAGE_SIZE = 20
   let params = new URLSearchParams({
     query,
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   })
+  for (let tag of tags) {
+    params.append("tags", tag)
+  }
   return fetch("/api/recipes/?" + params)
       .then(res => res.json())
 }
