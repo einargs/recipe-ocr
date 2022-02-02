@@ -102,9 +102,12 @@ searchRecipes RecipeSearch{..} = runDB $ do
         Nothing -> pure ()
       E.limit $ fromIntegral searchLimit
       pure recipes
-  Just (E.Value totalCount) <- E.selectOne do
+  mbTotalCount <- E.selectOne do
     recipes <- recipeQuery
     pure $ E.countDistinct (recipes E.^. DbRecipeId)
+  let totalCount = case mbTotalCount of
+                     Just (E.Value tc) -> tc
+                     Nothing -> 0
   -- TODO: optimize these into one query.
   recipes <- traverse loadFullRecipe dbRecipes
   pure $ (totalCount, recipes)
@@ -115,9 +118,13 @@ searchRecipes RecipeSearch{..} = runDB $ do
         `E.innerJoin` E.table @DbRecipeTag
         `E.on` (\(recipes E.:& tags) ->
                   recipes E.^. DbRecipeId E.==. tags E.^. DbRecipeTagRecipeId)
+      E.groupBy (tags E.^. DbRecipeTagRecipeId)
       case searchTags of
         [] -> pure ()
-        _ -> E.where_ $ tags E.^. DbRecipeTagName `E.in_` E.valList searchTags
+        _ -> do
+          E.where_ $ tags E.^. DbRecipeTagName `E.in_` E.valList searchTags
+          let len = E.val $ length searchTags
+          E.having $ (E.count $ tags E.^. DbRecipeTagRecipeId) E.==. len
       case searchQuery of
         Nothing -> pure ()
         Just str ->

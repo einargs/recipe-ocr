@@ -89,7 +89,6 @@ export default {
       let tags = tagString.length > 0 ? tagString
         .split(/\s*,\s*/)
         .map(s => s.trim()) : []
-      console.log(tags)
       searchRecipes(this.$data.query, tags, this.$data.page - 1)
         .then(({total, recipes}) => {
           this.$data.total = total
