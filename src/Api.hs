@@ -121,8 +121,11 @@ serverToApp api server env =
       app req f
 
 runApp :: Config -> IO ()
-runApp cfg = withAppEnv cfg $ run (configPort cfg) . app where
-  app = case envConfig cfg of
-          Production -> serverToApp (Proxy @FullSite) $ fullSiteServer cfg
-          Development -> serverToApp (Proxy @FullAPI) apiServer
+runApp cfg = withAppEnv cfg $ \env -> do
+  S.migrationIO env
+  run (configPort cfg) $ app env
+  where
+    app = case envConfig cfg of
+            Production -> serverToApp (Proxy @FullSite) $ fullSiteServer cfg
+            Development -> serverToApp (Proxy @FullAPI) apiServer
 

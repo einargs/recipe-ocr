@@ -7,6 +7,7 @@ module Storage
   , getRecipeImage
   , updateRecipe
   , deleteRecipe
+  , migrationIO
   ) where
 
 import Control.Monad
@@ -21,11 +22,11 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.Foldable
 import Data.Kind
-import Database.Persist
-import Database.Persist.Sql
-import Database.Persist.Sqlite
+import qualified Database.Persist as P
+-- import Database.Persist.Sql
+-- import Database.Persist.Sqlite
 import Database.Persist.TH
-import qualified Database.Esqueleto.Experimental as E
+import Database.Esqueleto.Experimental
 import Data.List.Index (imap)
 import Debug.Trace (traceShowM)
 
@@ -38,39 +39,68 @@ DbRecipe
   name Text
   body Text
   deriving Show
-DbRecipeImage
-  recipeId DbRecipeId
+DbImage
+  recipe DbRecipeId
   index Int
   ext Text
   data ByteString
+  UniqueRecipeIndex recipe index
   deriving Show
-DbRecipeTag
-  recipeId DbRecipeId
+DbTag
   name Text
+  UniqueName name
   deriving Show
+DbTagging
+  tag DbTagId
+  recipe DbRecipeId
 |]
-
-like :: EntityField record Text -> Text -> Filter record
-like field val = Filter field (FilterValue val) (BackendSpecificFilter "like")
 
 type family RecordBackends (backend :: Type) (models :: [Type]) :: Constraint where
   RecordBackends backend '[model] = (PersistRecordBackend model backend)
   RecordBackends backend (model ': models) = (PersistRecordBackend model backend, RecordBackends backend models)
 
 type Backend (backend :: Type) (models :: [Type]) =
-  (PersistQueryRead backend, RecordBackends backend models) :: Constraint
+  ( PersistQueryRead backend
+  , PersistUniqueRead backend
+  , RecordBackends backend models
+  , BackendCompatible SqlBackend backend
+  ) :: Constraint
 
-toRecipeImage :: DbRecipeImage -> RecipeImage
-toRecipeImage DbRecipeImage {dbRecipeImageExt, dbRecipeImageData} =
-  RecipeImage {recipeImageExt = dbRecipeImageExt, recipeImageData = dbRecipeImageData}
+migrationIO :: AppEnv -> IO ()
+migrationIO AppEnv{envPool} =
+  runSqlPool (runMigration migrateAll) envPool
+
+toRecipeImage :: DbImage -> RecipeImage
+toRecipeImage DbImage {dbImageData, dbImageExt} =
+  RecipeImage {recipeImageExt = dbImageExt, recipeImageData = dbImageData}
 
 loadFullRecipe
-  :: (MonadIO m, Backend backend '[DbRecipeTag, DbRecipeImage])
+  :: (MonadIO m, Backend backend '[DbTagging, DbTag, DbImage])
   => Entity DbRecipe -> ReaderT backend m Recipe
 loadFullRecipe Entity
   { entityKey=recipeId
   , entityVal=DbRecipe{dbRecipeName, dbRecipeBody}
   } = do
+  tags <- select do
+    (taggings :& tags) <- from $ table @DbTagging
+      `innerJoin` table @DbTag
+      `on` (\(taggings :& tags) ->
+        taggings ^. DbTaggingTag ==. tags ^. DbTagId)
+    where_ (taggings ^. DbTaggingRecipe ==. val recipeId)
+    pure tags
+  images <- select do
+    images <- from $ table @DbImage
+    where_ (images ^. DbImageRecipe ==. val recipeId)
+    pure images
+  pure $ Recipe
+    { recipeId = RecipeId $ fromSqlKey recipeId
+    , recipeName = dbRecipeName
+    , recipeBody = dbRecipeBody
+    , recipeTags = dbTagName . entityVal <$> tags
+    , recipeImages = toRecipeImage . entityVal <$> images
+    }
+    
+{-
   tagEntities <- selectList [DbRecipeTagRecipeId ==. recipeId] []
   imageEntities <- selectList [DbRecipeImageRecipeId ==. recipeId] [Asc DbRecipeImageIndex]
   pure $ Recipe
@@ -80,6 +110,7 @@ loadFullRecipe Entity
     , recipeTags = (dbRecipeTagName . entityVal) <$> tagEntities
     , recipeImages = toRecipeImage . entityVal <$> imageEntities
     }
+-}
 
 runDB :: SqlPersistT IO a -> App a
 runDB query = do
@@ -95,41 +126,44 @@ data RecipeSearch = RecipeSearch
 
 searchRecipes :: RecipeSearch -> App (Int, [Recipe])
 searchRecipes RecipeSearch{..} = runDB $ do
-  dbRecipes <- E.select $ E.distinct $ do
+  dbRecipes <- select $ distinct $ do
       recipes <- recipeQuery
       case searchOffset of
-        Just offset -> E.offset $ fromIntegral offset
+        Just o -> offset $ fromIntegral o
         Nothing -> pure ()
-      E.limit $ fromIntegral searchLimit
+      limit $ fromIntegral searchLimit
       pure recipes
-  mbTotalCount <- E.selectOne do
+  mbTotalCount <- selectOne do
     recipes <- recipeQuery
-    pure $ E.countDistinct (recipes E.^. DbRecipeId)
+    pure $ countDistinct (recipes ^. DbRecipeId)
   let totalCount = case mbTotalCount of
-                     Just (E.Value tc) -> tc
+                     Just (Value tc) -> tc
                      Nothing -> 0
   -- TODO: optimize these into one query.
   recipes <- traverse loadFullRecipe dbRecipes
   pure $ (totalCount, recipes)
   where
-    recipeQuery :: E.SqlQuery (E.SqlExpr (Entity DbRecipe))
+    recipeQuery :: SqlQuery (SqlExpr (Entity DbRecipe))
     recipeQuery = do
-      (recipes E.:& tags) <- E.from $ E.table @DbRecipe
-        `E.innerJoin` E.table @DbRecipeTag
-        `E.on` (\(recipes E.:& tags) ->
-                  recipes E.^. DbRecipeId E.==. tags E.^. DbRecipeTagRecipeId)
-      E.groupBy (tags E.^. DbRecipeTagRecipeId)
+      (recipes :& taggings :& tags) <- from $ table @DbRecipe
+        `innerJoin` table @DbTagging
+        `on` (\(recipes :& taggings) ->
+          recipes ^. DbRecipeId ==. taggings ^. DbTaggingRecipe)
+        `innerJoin` table @DbTag
+        `on` (\(_ :& taggings :& tags) ->
+          taggings ^. DbTaggingTag ==. tags ^. DbTagId)
+      groupBy (taggings ^. DbTaggingRecipe)
       case searchTags of
         [] -> pure ()
         _ -> do
-          E.where_ $ tags E.^. DbRecipeTagName `E.in_` E.valList searchTags
-          let len = E.val $ length searchTags
-          E.having $ (E.count $ tags E.^. DbRecipeTagRecipeId) E.==. len
+          where_ $ tags ^. DbTagName `in_` valList searchTags
+          let len = val $ length searchTags
+          having $ (count $ taggings ^. DbTaggingRecipe) ==. len
       case searchQuery of
         Nothing -> pure ()
         Just str ->
-          let query = (E.%) E.++. E.val str E.++. (E.%) in
-          E.where_ (recipes E.^. DbRecipeBody `E.like` query)
+          let query = (%) ++. val str ++. (%) in
+          where_ (recipes ^. DbRecipeBody `like` query)
       pure recipes
 
   {-
@@ -164,56 +198,79 @@ loadPreImage PreImage{..} = do
     , recipeImageData = image
     }
 
-toDbImages :: DbRecipeId -> [RecipeImage] -> [DbRecipeImage]
+toDbImages :: DbRecipeId -> [RecipeImage] -> [DbImage]
 toDbImages dbRecipeId = imap f
-  where f i RecipeImage {..} = DbRecipeImage
-          { dbRecipeImageRecipeId = dbRecipeId
-          , dbRecipeImageIndex = i
-          , dbRecipeImageExt = recipeImageExt
-          , dbRecipeImageData = recipeImageData
+  where f i RecipeImage {..} = DbImage
+          { dbImageRecipe = dbRecipeId
+          , dbImageIndex = i
+          , dbImageExt = recipeImageExt
+          , dbImageData = recipeImageData
           }
+
+insertRecipePeripherals
+  :: ( MonadIO m
+     , Backend backend '[DbTagging, DbTag, DbImage]
+     , PersistUniqueWrite backend
+     , PersistQueryWrite backend
+     )
+  => Key DbRecipe -> [Text] -> [RecipeImage] -> ReaderT backend m ()
+insertRecipePeripherals dbRecipeId rawTags images = do
+  let tagf t = DbTag
+        { dbTagName = t
+        }
+      taggingsf tagId = DbTagging
+        { dbTaggingRecipe = dbRecipeId
+        , dbTaggingTag = tagId
+        }
+
+  putMany $ tagf <$> rawTags
+  insertSelect do
+    tags <- from $ table @DbTag
+    where_ (tags ^. DbTagName `in_` valList rawTags)
+    pure $ DbTagging <# (tags ^. DbTagId) <&> val dbRecipeId
+  insertMany_ $ toDbImages dbRecipeId images
 
 insertRecipe :: PreRecipe -> App Recipe
 insertRecipe PreRecipe
   { preRecipeName = name
-  , preRecipeTags = tags
+  , preRecipeTags = rawTags
   , preRecipeImages = preImages
   } = do
     imageTexts <- traverse ocr $ preImagePath <$> preImages
     let body = T.intercalate " " imageTexts
     images <- traverse loadPreImage preImages
-    runDB $ do
+    runDB do
       dbRecipeId <- insert $ DbRecipe
         { dbRecipeName = name
         , dbRecipeBody = body
         }
 
-      let tagf t = DbRecipeTag
-            { dbRecipeTagName = t
-            , dbRecipeTagRecipeId = dbRecipeId
-            }
-          dbTags = tagf <$> tags
-          dbImages = toDbImages dbRecipeId images
-
-      traverse_ insert_ dbImages
-      traverse_ insert_ dbTags
+      insertRecipePeripherals dbRecipeId rawTags images
 
       pure $ Recipe
         { recipeId = RecipeId $ fromSqlKey dbRecipeId
         , recipeName = name
         , recipeBody = body
-        , recipeTags = tags
+        , recipeTags = rawTags
         , recipeImages = images
         }
 
 getRecipeImage :: RecipeId -> Int -> App (Maybe RecipeImage)
-getRecipeImage (RecipeId rid) idx = runDB $ do
-  mbDbImage <- selectFirst
-    [ DbRecipeImageRecipeId ==. toSqlKey rid
-    , DbRecipeImageIndex ==. idx] []
+getRecipeImage (RecipeId rid) idx = runDB do
+  mbDbImage <- getBy $ UniqueRecipeIndex (toSqlKey rid) idx
   pure $ toRecipeImage . entityVal <$> mbDbImage
 
 deleteRecipe :: RecipeId -> App ()
+deleteRecipe (RecipeId rid) = runDB do
+  delete do
+    images <- from $ table @DbImage
+    where_ (images ^. DbImageRecipe ==. valkey rid)
+    taggings <- from $ table @DbTagging
+    where_ (taggings ^. DbTaggingRecipe ==. valkey rid)
+    recipes <- from $ table @DbRecipe
+    where_ (recipes ^. DbRecipeId ==. valkey rid)
+
+  {-
 deleteRecipe (RecipeId rid) = runDB $ do
   deleteWhere [DbRecipeImageRecipeId ==. dbRecipeId]
   deleteWhere [DbRecipeTagRecipeId ==. dbRecipeId]
@@ -221,6 +278,7 @@ deleteRecipe (RecipeId rid) = runDB $ do
   where
     dbRecipeId :: DbRecipeId
     dbRecipeId = toSqlKey rid
+-}
 
 updateRecipe :: RecipeId -> PreRecipe -> App ()
 updateRecipe (RecipeId rid) PreRecipe
@@ -231,8 +289,20 @@ updateRecipe (RecipeId rid) PreRecipe
   images <- traverse loadPreImage preImages
   imageTexts <- traverse ocr $ preImagePath <$> preImages
   let body = T.intercalate " " imageTexts
+      dbRecipeId = toSqlKey rid
 
   runDB $ do
+    replace dbRecipeId $ DbRecipe
+      { dbRecipeName = name
+      , dbRecipeBody = body
+      }
+    delete do
+      images <- from $ table @DbImage
+      where_ (images ^. DbImageRecipe ==. valkey rid)
+      taggings <- from $ table @DbTagging
+      where_ (taggings ^. DbTaggingRecipe ==. valkey rid)
+    insertRecipePeripherals dbRecipeId tags images
+    {-
     update dbRecipeId
       [ DbRecipeName =. name
       , DbRecipeBody =. body
@@ -249,3 +319,4 @@ updateRecipe (RecipeId rid) PreRecipe
       }
     dbRecipeId :: DbRecipeId
     dbRecipeId = toSqlKey rid
+-}
