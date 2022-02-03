@@ -13,7 +13,14 @@
         @click="goToEdit"
         type="primary">Edit</el-button>
     </template>
-    <h1>{{recipe.name}}</h1>
+    <el-descriptions
+      class="recipe-desc"
+      :title="recipe.name"
+      border>
+      <el-descriptions-item label="Tags">
+        {{tagString}}
+      </el-descriptions-item>
+    </el-descriptions>
     <div class="image-list">
       <el-row v-for="url in recipe.images" :key="url">
         <el-col
@@ -45,6 +52,7 @@ export default {
     return {
       recipe: {
         name: "",
+        tags: [],
         images: [],
         body: "",
       },
@@ -55,6 +63,9 @@ export default {
       return this.$data.recipe.body
         .split(/\n+/g)
         .filter(str => str != "")
+    },
+    tagString() {
+      return this.$data.recipe.tags.join(", ")
     },
   },
   methods: {
@@ -72,4 +83,7 @@ export default {
 </script>
 
 <style>
+.recipe-desc {
+  margin-bottom: 24px;
+}
 </style>

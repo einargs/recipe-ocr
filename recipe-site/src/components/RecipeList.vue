@@ -10,11 +10,13 @@
         @click="goToAdd"
         type="primary">Add Recipe</el-button>
     </template>
-    <el-input v-model="query" placeholder="Search..." @change="search" />
-    <el-tooltip class="tooltip" effect="dark"
-      placement="bottom" content="comma separated list">
-      <el-input v-model="tagString" placeholder="Tags..." @change="search" />
-    </el-tooltip>
+    <div class="search-inputs">
+      <el-input v-model="query" placeholder="Search..." @change="search" />
+      <el-tooltip class="tooltip" effect="dark"
+        placement="bottom" content="comma separated list">
+        <el-input v-model="tagString" placeholder="Tags..." @change="search" />
+      </el-tooltip>
+    </div>
       <!-- element-loading-text="Loading..."
       element-loading-background="rgba(0,0,0,0.8)" -->
     <div
@@ -140,5 +142,12 @@ export default {
   justify-content: flex-start;
   flex-direction: row;
   margin: 10px;
+}
+
+.search-inputs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 10px;
 }
 </style>
