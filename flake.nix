@@ -12,7 +12,7 @@
           recipeOcrServer =
             final.haskell-nix.project' {
               src = ../.;
-              compiler-nix-name = "ghc901";
+              compiler-nix-name = "ghc902";
               # This is used by `nix develop .` to open a shell for use with
               # `cabal`, `hlint` and `haskell-language-server`
               # shell.tools = {
@@ -34,8 +34,17 @@
         # This adds support for `nix build .#js-unknown-ghcjs:hello:exe:hello`
         # crossPlatforms = p: [p.ghcjs];
       };
+      rawPackage = flake.packages."recipe-ocr:exe:recipe-ocr-exe";
+      patched = pkgs.runCommand "recipe-ocr-patched" { } ''
+        set -eu
+        ls ${rawPackage}/bin/
+        cp ${rawPackage}/bin/recipe-ocr $out
+        chmod +w $out
+        ${pkgs.patchelf}/bin/patchelf --set-interpreter /lib/ld-linux-aarch64.so.1 --set-rpath /lib:/usr/lib $out
+        chmod -w $out
+      '';
     in flake // {
       # Built by `nix build .`
-      packages.default = flake.packages."recipe-ocr:exe:recipe-ocr-exe";
+      packages.default = patched;
     });
 }
