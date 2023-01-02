@@ -6,7 +6,7 @@ with pkgs;
 
 mkShell {
   buildInputs = [ stack haskell.compiler.ghc901 sqlite
-    tesseract4 nodejs-16_x ]
+    tesseract4 nodejs-16_x cabal2nix ]
     ++ (with haskellPackages; [
       ghcid
       # Required by spacemacs haskell layer
