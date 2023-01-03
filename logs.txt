@@ -1,0 +1,3 @@
+nix log /nix/store/b1dbz1zv6dwzn0pi9a98frak4cnfa8ns-armv6l-unknown-linux-gnueabihf-ghc-9.0.1.drv
+nix log /nix/store/6lziwapdjh8qgs87yi8mwdxn1g5w3byk-armv6l-unknown-linux-gnueabihf-ghc-9.0.1.drv
+nix log /nix/store/82fmd8ahjir17m9zcyi7pymrlymk37ki-armv6l-unknown-linux-gnueabihf-ghc-9.0.2.drv
