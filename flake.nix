@@ -18,6 +18,9 @@
         chmod -w $out
       '';
     in {
+      nixConfig = ''
+        bash-prompt = \[\033[1;32m\][\[\e]0;\u@\h: \w\a\]dev-shell:\w]\$\[\033[0m\] 
+      '';
       devShells.default = mkShell {
         buildInputs = [ stack haskell.compiler.ghc925 sqlite
           tesseract4 nodejs-16_x cabal2nix ]
