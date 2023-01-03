@@ -30,7 +30,7 @@
         NIX_PATH="nixpkgs=${nixpkgs}";
       };
       packages.pi-build = patched-pi;
-
-  )
+    }
+  );
 
 }
