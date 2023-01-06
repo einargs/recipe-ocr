@@ -17,7 +17,7 @@
           set -eu
           cp ${raw-pi}/bin/recipe-ocr $out
           chmod +w $out
-          ${native.patchelf}/bin/patchelf --set-interpreter /lib/ld-linux-aarch64.so.1 --set-rpath /lib:/usr/lib $out
+          ${patchelf}/bin/patchelf --set-interpreter /lib/ld-linux-aarch64.so.1 --set-rpath /lib:/usr/lib $out
           chmod -w $out
         '';
       in {
