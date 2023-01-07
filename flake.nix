@@ -13,9 +13,8 @@
       let raw-pi = haskell.packages.ghc925.callPackage ./server-package.nix { };
           patched-pi = runCommand "recipe-ocr-patched" { } ''
             set -eu
-            ls ${raw-pi}/bin/
-            ls ${raw-pi}/bin/recipe-ocr
-            cp ${raw-pi}/bin/recipe-ocr $out
+            ls ${raw-pi}/bin/recipe-ocr-exe
+            cp ${raw-pi}/bin/recipe-ocr-exe $out
             chmod +w $out
             ${patchelf}/bin/patchelf --set-interpreter /lib/ld-linux-aarch64.so.1 --set-rpath /lib:/usr/lib $out
             chmod -w $out
