@@ -4,3 +4,4 @@ test-imgs/*
 TAGS
 db/test.db
 *.swp
+result
