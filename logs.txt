@@ -1,7 +1,0 @@
-nix log /nix/store/b1dbz1zv6dwzn0pi9a98frak4cnfa8ns-armv6l-unknown-linux-gnueabihf-ghc-9.0.1.drv
-nix log /nix/store/6lziwapdjh8qgs87yi8mwdxn1g5w3byk-armv6l-unknown-linux-gnueabihf-ghc-9.0.1.drv
-nix log /nix/store/82fmd8ahjir17m9zcyi7pymrlymk37ki-armv6l-unknown-linux-gnueabihf-ghc-9.0.2.drv
-nix log /nix/store/d02jy6m1y66lryblxiygp0d4xzyca5xc-servant-docs-aarch64-unknown-linux-gnu-0.12.drv
-
-worked except for patch
-nix log /nix/store/p9mjfzsbrpz5r8bri68dcrx2mviw2j5s-recipe-ocr-patched.drv
