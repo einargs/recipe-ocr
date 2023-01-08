@@ -17,7 +17,7 @@
       let
         compiler = "ghc925";
         cabalPackageName = "recipe-ocr-exe";
-        stack2nix-output-path = "stack2nix-output.nix";
+        stack2nix-output-path = ./stack2nix-output.nix;
         stack2nix-script = import "${static-haskell-nix}/static-stack2nix-builder/stack2nix-script.nix" {
           inherit compiler pkgs;
           stack-project-dir = ./.;
@@ -30,7 +30,25 @@
           inherit cabalPackageName compiler stack2nix-output-path;
           # disableOptimization = true; # for compile speed
         };
-        static-pi = static-stack2nix-builder.static_package;
+
+        # Full invocation, including pinning `nix` version itself.
+        fullBuildScript = pkgs.writeShellScript "stack2nix-and-build-script.sh" ''
+          set -eu -o pipefail
+          STACK2NIX_OUTPUT_PATH=$(${stack2nix-script})
+          export NIX_PATH=nixpkgs=${pkgs.path}
+          ${pkgs.nix}/bin/nix-build --no-link -A static_package --argstr stack2nix-output-path "$STACK2NIX_OUTPUT_PATH" "$@"
+        '';
+
+        static-pi = pkgsMusl.haskell.packages.${compiler}.callPackage ./server-package.nix {
+          isStatic = true;
+          configureFlags = [
+            "--ghc-option=-optl=-static"
+            "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
+            "--extra-lib-dirs=${pkgs.zlib.static}/lib"
+            "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+          ];
+        };
+
         # raw-pi = pkgsStatic.haskell.packages.${compiler}.callPackage ./server-package.nix { };
         # patched-pi = runCommand "recipe-ocr-patched" { } ''
         #   set -eu
@@ -55,6 +73,7 @@
         # packages.default = raw-pi;
         # packages.pi-build = patched-pi;
         packages.static-pi = static-pi;
+        packages.fullBuildScript = fullBuildScript;
       }
     );
 
