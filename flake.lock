@@ -33,25 +33,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "static-haskell-nix": "static-haskell-nix"
-      }
-    },
-    "static-haskell-nix": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1627000767,
-        "narHash": "sha256-UC6qntmUCAdrrvG5h1jGzR8ASAwTP5qetv+Ifbjq2mY=",
-        "owner": "nh2",
-        "repo": "static-haskell-nix",
-        "rev": "bd66b86b72cff4479e1c76d5916a853c38d09837",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nh2",
-        "ref": "master",
-        "repo": "static-haskell-nix",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     }
   },

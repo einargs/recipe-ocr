@@ -7,7 +7,7 @@
   nixConfig = {
     bash-prompt = ''\[\033[1;32m\][\[\e]0;\u@\h: \w\a\]dev-shell:\w]\$\[\033[0m\] '';
   };
-  outputs = { self, nixpkgs, haskellNix, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       with import nixpkgs { inherit system; };
       let

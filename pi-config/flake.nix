@@ -1,7 +1,7 @@
 {
   description = "NixOS Raspberry Pi configuration flake";
   inputs = {
-    recipe-ocr = "path:.";
+    recipe-ocr = "path:..";
     nixpkgs.follows = "recipe-ocr/nixpkgs";
   };
 
