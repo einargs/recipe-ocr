@@ -3,7 +3,6 @@
 , persistent-sqlite, persistent-template, process, resource-pool
 , servant, servant-multipart, servant-server, temporary, text
 , transformers, wai, wai-app-static, wai-cors, wai-extra, warp
-, isStatic, configureFlags
 }:
 mkDerivation {
   pname = "recipe-ocr";
@@ -33,9 +32,6 @@ mkDerivation {
     warp
   ];
 
-  enableSharedExecutables = !isStatic;
-  enableSharedLibraries = !isStatic;
-  inherit configureFlags;
   homepage = "https://github.com/githubuser/recipe-ocr#readme";
   license = lib.licenses.bsd3;
   mainProgram = "recipe-ocr-exe";

@@ -20,11 +20,6 @@
 resolver: lts-20.5
   #  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
 
-# Use nix
-nix:
-  enable: true
-  shell-file: stack-shell.nix
-
 # User packages to be built.
 # Various formats can be used as shown in the example below.
 #
