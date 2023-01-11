@@ -1,7 +1,7 @@
 {
   description = "NixOS Raspberry Pi configuration flake";
   inputs = {
-    recipe-ocr = "path:..";
+    recipe-ocr.url = "path:..";
     nixpkgs.follows = "recipe-ocr/nixpkgs";
   };
 
@@ -40,14 +40,17 @@
                 ];
                 hashedPassword = "$y$j9T$LWk0sZbX9Prm.XTQy36rU0$B/YFm6fcrjRtlTR1tOC6plDTTWNKxCCnQjvOX719Ii8";
             };
-            systemd.services.recipe-ocr = {
-              description = "recipe-ocr server";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network.target" ];
-              serviceConfig = {
-                ExecStart = ''${recipe-server}/bin/recipe-ocr-exe'';
-              };
-            };
+            environment.systemPackages = with pkgs; [
+              tesseract4 recipe-server sqlite ];
+            # Go over systemd stuff later
+            # systemd.services.recipe-ocr = {
+            #   description = "recipe-ocr server";
+            #   wantedBy = [ "multi-user.target" ];
+            #   after = [ "network.target" ];
+            #   serviceConfig = {
+            #     ExecStart = ''${recipe-server}/bin/recipe-ocr-exe'';
+            #   };
+            # };
           };
         })
       ];

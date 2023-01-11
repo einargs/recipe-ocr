@@ -9,9 +9,9 @@
   };
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
-      with import nixpkgs { inherit system; };
+      with nixpkgs.legacyPackages.${system};
       let
-        compiler = "ghc925";
+        compiler = "ghc902";
         hPkgs = haskell.packages.${compiler};
         recipe-ocr = hPkgs.callPackage ./server-package.nix { };
         stack-wrapped = symlinkJoin {
