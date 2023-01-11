@@ -1,7 +1,7 @@
 {
   description = "NixOS Raspberry Pi configuration flake";
   inputs = {
-    recipe-ocr.url = "path:..";
+    recipe-ocr.url = "path:./..";
     nixpkgs.follows = "recipe-ocr/nixpkgs";
   };
 
@@ -24,7 +24,13 @@
               hostName = "recipe-pi";
               domain = "local";
               useDHCP = true;
-              firewall.allowedTCPPorts = [ 22 80 443 ];
+              firewall.allowedTCPPorts = [ 22 80 443 8000 ];
+              wireless = {
+                enable = true;
+                networks = {
+                  Raettig.pskRaw = "03fcdc67d0ee6d9712f18fea04efeb65460c70cdc4d943d7944b8435997193f8";
+                };
+              };
             };
             system.stateVersion = "22.11";
             services.openssh = {
@@ -37,6 +43,7 @@
                 description = "main user";
                 extraGroups = [
                   "wheel" # allow sudo
+                  "networkmanager"
                 ];
                 hashedPassword = "$y$j9T$LWk0sZbX9Prm.XTQy36rU0$B/YFm6fcrjRtlTR1tOC6plDTTWNKxCCnQjvOX719Ii8";
             };
