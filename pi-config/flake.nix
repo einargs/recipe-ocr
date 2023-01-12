@@ -3,9 +3,10 @@
   inputs = {
     recipe-ocr.url = "path:./..";
     nixpkgs.follows = "recipe-ocr/nixpkgs";
+    deploy-rs.follows = "recipe-ocr/deploy-rs";
   };
 
-  outputs = { self, nixpkgs, recipe-ocr }:
+  outputs = { self, nixpkgs, deploy-rs, recipe-ocr }:
     let recipe-server = recipe-ocr.packages.aarch64-linux.default;
     in {
     nixosConfigurations.recipe-pi = nixpkgs.lib.nixosSystem {
@@ -28,7 +29,6 @@
               wireless = {
                 enable = true;
                 networks = {
-                  # Raettig 29125832
                   Raettig.pskRaw = "fa56f80b59a80a4461dc93c9a1fd5b1d76d59180d7524494e0b20351d9fd72fd";
                 };
               };
@@ -37,7 +37,15 @@
             services.openssh = {
               enable = true;
             };
-            services.avahi.enable = true;
+            services.avahi = {
+              enable = true;
+              nssmdns = true;
+              publish = {
+                enable = true;
+                domain = true;
+                addresses = true;
+              };
+            };
             users.mutableUsers = false;
             users.users.pi = {
                 isNormalUser = true;
@@ -48,6 +56,9 @@
                   "disk" "audio" "video" "networkmanager" "systemd-journal"
                 ];
                 hashedPassword = "$y$j9T$LWk0sZbX9Prm.XTQy36rU0$B/YFm6fcrjRtlTR1tOC6plDTTWNKxCCnQjvOX719Ii8";
+                openssh.authorizedKeys.keys = [
+                  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICpiOOnaTALPgrSRXAmY/49QN3CGAIwCmlFm9UjBsYWi einargs@gmail.com"
+                ];
             };
             environment.systemPackages = with pkgs; [
               tesseract4 recipe-server sqlite ];
@@ -64,5 +75,18 @@
         })
       ];
     };
+    deploy.nodes.recipe-pi = {
+      hostname = "recipe-pi.local";
+      profiles.system = {
+        magicRollback = true; # may need to disable
+        sshUser = "pi";
+        user = "root";
+        path = deploy-rs.lib.aarch64-linux.activate.nixos
+          self.nixosConfigurations.recipe-pi;
+      };
+    };
+    checks = builtins.mapAttrs
+      (system: deployLib: deployLib.deployChecks self.deploy)
+      deploy-rs.lib;
   };
 }

@@ -3,11 +3,12 @@
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-22.11";
     flake-utils.url = "github:numtide/flake-utils";
+    deploy-rs.url = "github:serokell/deploy-rs";
   };
   nixConfig = {
     bash-prompt = ''\[\033[1;32m\][\[\e]0;\u@\h: \w\a\]dev-shell:\w]\$\[\033[0m\] '';
   };
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, deploy-rs, flake-utils }:
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       with nixpkgs.legacyPackages.${system};
       let
@@ -23,10 +24,11 @@
               "--no-nix --system-ghc --no-install-ghc"
           '';
         };
+        deploy = deploy-rs.defaultPackage.${system};
       in {
         devShells.default = mkShell {
           buildInputs = [ stack-wrapped haskell.compiler.${compiler} sqlite
-            tesseract4 nodejs-16_x cabal2nix zlib ]
+            tesseract4 nodejs-16_x cabal2nix zlib deploy ]
               ++ (with hPkgs; [
                 ghc ghcid
                 # Required by spacemacs haskell layer
@@ -35,6 +37,7 @@
           # Hack to make c stuff available to GHC
           # see: https://docs.haskellstack.org/en/stable/nix_integration/
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ zlib hPkgs.ghc ];
+          LOCAL_KEY = "/var/cache-priv-key.pem";
         };
 
         packages.default = recipe-ocr;
