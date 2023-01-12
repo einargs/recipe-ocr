@@ -28,7 +28,8 @@
               wireless = {
                 enable = true;
                 networks = {
-                  Raettig.pskRaw = "03fcdc67d0ee6d9712f18fea04efeb65460c70cdc4d943d7944b8435997193f8";
+                  # Raettig 29125832
+                  Raettig.pskRaw = "fa56f80b59a80a4461dc93c9a1fd5b1d76d59180d7524494e0b20351d9fd72fd";
                 };
               };
             };
@@ -36,6 +37,7 @@
             services.openssh = {
               enable = true;
             };
+            services.avahi.enable = true;
             users.mutableUsers = false;
             users.users.pi = {
                 isNormalUser = true;
@@ -43,7 +45,7 @@
                 description = "main user";
                 extraGroups = [
                   "wheel" # allow sudo
-                  "networkmanager"
+                  "disk" "audio" "video" "networkmanager" "systemd-journal"
                 ];
                 hashedPassword = "$y$j9T$LWk0sZbX9Prm.XTQy36rU0$B/YFm6fcrjRtlTR1tOC6plDTTWNKxCCnQjvOX719Ii8";
             };

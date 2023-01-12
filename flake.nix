@@ -25,16 +25,16 @@
         };
       in {
         devShells.default = mkShell {
-          buildInputs = [ stack haskell.compiler.${compiler} sqlite
-            tesseract4 nodejs-16_x cabal2nix ]
-            ++ (with hPkgs; [
-              ghcid
-              # Required by spacemacs haskell layer
-              apply-refact hlint stylish-haskell hasktags hoogle
-            ]);
+          buildInputs = [ stack-wrapped haskell.compiler.${compiler} sqlite
+            tesseract4 nodejs-16_x cabal2nix zlib ]
+              ++ (with hPkgs; [
+                ghc ghcid
+                # Required by spacemacs haskell layer
+                apply-refact hlint stylish-haskell hasktags hoogle
+              ]);
           # Hack to make c stuff available to GHC
           # see: https://docs.haskellstack.org/en/stable/nix_integration/
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ zlib ];
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ zlib hPkgs.ghc ];
         };
 
         packages.default = recipe-ocr;

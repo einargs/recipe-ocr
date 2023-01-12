@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.5.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -74,6 +74,7 @@ library
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
+    , optparse-applicative >=0.16.1
     , persistent >=2.11
     , persistent-sqlite >=2.11
     , persistent-template >=2.9
@@ -139,6 +140,7 @@ executable recipe-ocr-exe
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
+    , optparse-applicative >=0.16.1
     , persistent >=2.11
     , persistent-sqlite >=2.11
     , persistent-template >=2.9
@@ -206,6 +208,7 @@ test-suite recipe-ocr-test
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
+    , optparse-applicative >=0.16.1
     , persistent >=2.11
     , persistent-sqlite >=2.11
     , persistent-template >=2.9

@@ -45,6 +45,7 @@ dependencies:
 - aeson >= 1.5
 - resource-pool >= 0.2.3
 - filepath >= 1.4
+- optparse-applicative >= 0.16.1
 
 library:
   source-dirs: src
