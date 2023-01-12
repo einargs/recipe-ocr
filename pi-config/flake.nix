@@ -3,7 +3,7 @@
   inputs = {
     recipe-ocr.url = "path:./..";
     nixpkgs.follows = "recipe-ocr/nixpkgs";
-    deploy-rs.follows = "recipe-ocr/deploy-rs";
+    deploy-rs.url = "github:serokell/deploy-rs";
   };
 
   outputs = { self, nixpkgs, deploy-rs, recipe-ocr }:
