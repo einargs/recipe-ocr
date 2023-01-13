@@ -34,6 +34,7 @@ data Config = Config
   { sqliteFile :: Text
   , configPort :: Int
   , webAppDir :: FilePath
+  , serveSiteDir :: Bool
   , envConfig :: EnvConfig
   }
 

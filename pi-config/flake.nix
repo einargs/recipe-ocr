@@ -12,7 +12,7 @@
     in {
     devShells.x86_64-linux.default = pkgs.mkShell {
       buildInputs = [ deploy-rs.defaultPackage.x86_64-linux ];
-      # LOCAL_KEY = "/var/cache-priv-key.pem";
+      LOCAL_KEY = "/var/cache-priv-key.pem";
     };
 
     nixosConfigurations.recipe-pi = nixpkgs.lib.nixosSystem {
@@ -42,6 +42,7 @@
             nix.settings = {
               trusted-public-keys = [
                 (builtins.readFile ./cache-pub-key.pem)
+                "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
               ];
             };
             system.stateVersion = "22.11";

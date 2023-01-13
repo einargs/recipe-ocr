@@ -125,7 +125,7 @@ runApp cfg = withAppEnv cfg $ \env -> do
   S.migrationIO env
   run (configPort cfg) $ app env
   where
-    app = case envConfig cfg of
-            Production -> serverToApp (Proxy @FullSite) $ fullSiteServer cfg
-            Development -> serverToApp (Proxy @FullAPI) apiServer
+    app = if serveSiteDir cfg
+             then serverToApp (Proxy @FullSite) $ fullSiteServer cfg
+             else serverToApp (Proxy @FullAPI) apiServer
 
