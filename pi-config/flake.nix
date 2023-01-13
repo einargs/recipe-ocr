@@ -8,7 +8,13 @@
 
   outputs = { self, nixpkgs, deploy-rs, recipe-ocr }:
     let recipe-server = recipe-ocr.packages.aarch64-linux.default;
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in {
+    devShells.x86_64-linux.default = pkgs.mkShell {
+      buildInputs = [ deploy-rs.defaultPackage.x86_64-linux ];
+      # LOCAL_KEY = "/var/cache-priv-key.pem";
+    };
+
     nixosConfigurations.recipe-pi = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
@@ -33,6 +39,11 @@
                 };
               };
             };
+            nix.settings = {
+              trusted-public-keys = [
+                (builtins.readFile ./cache-pub-key.pem)
+              ];
+            };
             system.stateVersion = "22.11";
             services.openssh = {
               enable = true;
@@ -40,6 +51,7 @@
             services.avahi = {
               enable = true;
               nssmdns = true;
+              ipv6 = false;
               publish = {
                 enable = true;
                 domain = true;
@@ -80,13 +92,14 @@
       profiles.system = {
         magicRollback = true; # may need to disable
         sshUser = "pi";
+        # sshOpts = [ "-t" ];
         user = "root";
         path = deploy-rs.lib.aarch64-linux.activate.nixos
           self.nixosConfigurations.recipe-pi;
       };
     };
-    checks = builtins.mapAttrs
-      (system: deployLib: deployLib.deployChecks self.deploy)
-      deploy-rs.lib;
+    # checks = builtins.mapAttrs
+    #   (system: deployLib: deployLib.deployChecks self.deploy)
+    #   deploy-rs.lib;
   };
 }
