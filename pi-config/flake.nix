@@ -89,7 +89,9 @@
       ];
     };
     deploy.nodes.recipe-pi = {
-      hostname = "recipe-pi.local";
+      # Fuck Avahi. It still is unreliable sometimes.
+      hostname = "recipe-pi.attlocal.net";
+      # hostname = "recipe-pi.local";
       profiles.system = {
         magicRollback = true; # may need to disable
         sshUser = "pi";
