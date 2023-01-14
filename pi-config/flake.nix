@@ -50,6 +50,9 @@
               enable = true;
             };
             services.avahi = {
+              # Might manually use mdns4, see:
+              # https://discourse.nixos.org/t/help-with-local-dns-resolution/20305/5
+              # probably try resolved first though.
               enable = true;
               nssmdns = true;
               ipv6 = false;
