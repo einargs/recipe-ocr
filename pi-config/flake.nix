@@ -73,6 +73,7 @@
                   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICpiOOnaTALPgrSRXAmY/49QN3CGAIwCmlFm9UjBsYWi einargs@gmail.com"
                 ];
             };
+            security.sudo.wheelNeedsPassword = false;
             environment.systemPackages = with pkgs; [
               tesseract4 recipe-server sqlite ];
             # Go over systemd stuff later
@@ -89,13 +90,17 @@
       ];
     };
     deploy.nodes.recipe-pi = {
-      # Fuck Avahi. It still is unreliable sometimes.
+      # Fuck Avahi. It is still unreliable sometimes, so we'll use the builtin
+      # router mdns.
       hostname = "recipe-pi.attlocal.net";
       # hostname = "recipe-pi.local";
       profiles.system = {
         magicRollback = true; # may need to disable
         sshUser = "pi";
         # sshOpts = [ "-t" ];
+        # NOTE: if you need to pass the password to sudo but the tty isn't
+        # working, you can also do `sudo = "echo password | sudo -S -u";`.
+        # -S makes sudo read the password from stdin.
         user = "root";
         path = deploy-rs.lib.aarch64-linux.activate.nixos
           self.nixosConfigurations.recipe-pi;
