@@ -26,11 +26,11 @@ Feedback
   while uploading.
 - [ ] Implement OCR queue. STM?
 - [ ] Make text in content field bigger.
-- [ ] Tags aren't being saved. It looks like there's an SQL error involving
+- [X] Tags aren't being saved. It looks like there's an SQL error involving
   syntax somehow???
-- [ ] can't delete recipes either.
-- [ ] Tags aren't searched.
+- [X] can't delete recipes either.
+- [ ] Tags can't be searched.
 - [ ] Tesseract doesn't have a specified dpi?
 - [ ] Don't log the whole image and text.
 - [ ] Tesseract 5 is out.
-- [ ] maybe some UI to confirm with 
+- [ ] maybe some UI to confirm the content before saving an image.

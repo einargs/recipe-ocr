@@ -265,10 +265,26 @@ deleteRecipe (RecipeId rid) = runDB do
   delete do
     images <- from $ table @DbImage
     where_ (images ^. DbImageRecipe ==. valkey rid)
+  delete do
     taggings <- from $ table @DbTagging
     where_ (taggings ^. DbTaggingRecipe ==. valkey rid)
+  delete do
     recipes <- from $ table @DbRecipe
     where_ (recipes ^. DbRecipeId ==. valkey rid)
+{-
+  delete do
+    (recipes :& images :& taggings) <-
+      from $ (table @DbRecipe
+      `leftJoin` table @DbImage
+      `on` (\(recipes :& images) ->
+        just (recipes ^. DbRecipeId) ==. images ?. DbImageRecipe))
+      `leftJoin` table @DbTagging
+      `on` (\(recipes :& _ :& tagging) ->
+        just (recipes ^. DbRecipeId) ==. tagging ?. DbTaggingRecipe)
+    where_ $ recipes ^. DbRecipeId ==. valkey rid
+-}
+{-
+-}
 
   {-
 deleteRecipe (RecipeId rid) = runDB $ do
@@ -299,6 +315,7 @@ updateRecipe (RecipeId rid) PreRecipe
     delete do
       images <- from $ table @DbImage
       where_ (images ^. DbImageRecipe ==. valkey rid)
+    delete do
       taggings <- from $ table @DbTagging
       where_ (taggings ^. DbTaggingRecipe ==. valkey rid)
     insertRecipePeripherals dbRecipeId tags images
