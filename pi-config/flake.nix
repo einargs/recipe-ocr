@@ -15,7 +15,7 @@
       LOCAL_KEY = "/var/cache-priv-key.pem";
     };
 
-    nixosConfigurations.recipe-pi = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.recipes = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
         # Additional NixOS modules, like Home Manager or personal modules
@@ -28,7 +28,8 @@
           config = {
             # ...like <hostname>
             networking = {
-              hostName = "recipe-pi";
+              # More convienient name for others.
+              hostName = "recipes";
               domain = "local";
               useDHCP = true;
               firewall.allowedTCPPorts = [ 22 80 443 8000 ];
@@ -92,11 +93,11 @@
         })
       ];
     };
-    deploy.nodes.recipe-pi = {
+    deploy.nodes.recipes = {
       # Fuck Avahi. It is still unreliable sometimes, so we'll use the builtin
       # router mdns.
-      hostname = "recipe-pi.attlocal.net";
-      # hostname = "recipe-pi.local";
+      hostname = "recipes.attlocal.net";
+      # hostname = "recipes.local";
       profiles.system = {
         magicRollback = true; # may need to disable
         sshUser = "pi";
@@ -106,7 +107,7 @@
         # -S makes sudo read the password from stdin.
         user = "root";
         path = deploy-rs.lib.aarch64-linux.activate.nixos
-          self.nixosConfigurations.recipe-pi;
+          self.nixosConfigurations.recipes;
       };
     };
     # checks = builtins.mapAttrs
