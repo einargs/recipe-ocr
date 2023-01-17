@@ -45,7 +45,7 @@ mainConfig = Config
     <> help "do not serve the static site")
   <*> flag Production Development
     (long "dev"
-    <> help "use development environment config. (currently does nothing)")
+    <> help "indicates development mode. Currently does nothing.")
 
 config :: Parser Config
 config = devConfig <|> mainConfig
