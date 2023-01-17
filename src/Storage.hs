@@ -77,7 +77,23 @@ type Backend (backend :: Type) (models :: [Type]) =
 
 migrationIO :: AppEnv -> IO ()
 migrationIO AppEnv{envPool} =
-  runSqlPool (runMigration migrateAll) envPool
+  flip runSqlPool envPool $ runMigration do
+    migrateAll
+    -- addMigration automatically adds ; to the end
+    addMigration False "CREATE VIRTUAL TABLE IF NOT EXISTS fts_idx USING fts5(\
+      \body, content='db_recipe', content_rowid='id')"
+    triggerMigration "db_recipe_ai" "INSERT"
+      "INSERT INTO fts_idx(rowid, body) VALUES (new.id, new.body);"
+    triggerMigration "db_recipe_ad" "DELETE"
+      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', new.id, new.body);"
+    triggerMigration "db_recipe_au" "UPDATE"
+      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', new.id, new.body);\n\
+      \INSERT INTO fts_idx(rowid, body) VALUES (new.id, new.body);"
+  where
+    triggerMigration name form body = addMigration False $ T.concat
+      [ "CREATE TRIGGER IF NOT EXISTS ", name, " AFTER ", form
+      , " ON db_recipe BEGIN\n", body, "\nEND" ]
+      
 
 toRecipeImage :: DbImage -> RecipeImage
 toRecipeImage DbImage {dbImageData, dbImageExt} =
