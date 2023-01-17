@@ -46,6 +46,7 @@ dependencies:
 - resource-pool >= 0.2.3
 - filepath >= 1.4
 - optparse-applicative >= 0.16.1
+- hashable
 
 library:
   source-dirs: src

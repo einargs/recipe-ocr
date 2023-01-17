@@ -13,7 +13,8 @@ import Models
 import App
 
 ocr :: FilePath -> App Text
-ocr imagePath =
+ocr imagePath = do
+  liftIO $ TIO.putStrLn "RUNNING OCR"
   liftIO $ withSystemTempDirectory "tesseractDir" $ \path -> do
     let procConfig = (shell $ "tesseract " <> imagePath <> " result -l eng") {cwd = Just path}
     (_,_,_, process) <- createProcess procConfig

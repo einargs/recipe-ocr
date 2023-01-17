@@ -71,6 +71,7 @@ library
     , containers >=0.6.2
     , esqueleto >=3.5
     , filepath >=1.4
+    , hashable
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
@@ -137,6 +138,7 @@ executable recipe-ocr-exe
     , containers >=0.6.2
     , esqueleto >=3.5
     , filepath >=1.4
+    , hashable
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
@@ -205,6 +207,7 @@ test-suite recipe-ocr-test
     , containers >=0.6.2
     , esqueleto >=3.5
     , filepath >=1.4
+    , hashable
     , ilist >=0.4
     , monad-logger >=0.3.36
     , mtl >=2.2
