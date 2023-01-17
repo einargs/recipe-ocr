@@ -1,4 +1,7 @@
-{ pkgs, recipe-ocr, ... }: {
+{ pkgs, ... }: {
+  imports = [
+    ./recipe-ocr-service.nix
+  ];
   config = {
     # ...like <hostname>
     networking = {
@@ -53,15 +56,12 @@
     };
     security.sudo.wheelNeedsPassword = false;
     environment.systemPackages = with pkgs; [
-      tesseract4 recipe-ocr sqlite ];
-    # Go over systemd stuff later
-    # systemd.services.recipe-ocr = {
-    #   description = "recipe-ocr server";
-    #   wantedBy = [ "multi-user.target" ];
-    #   after = [ "network.target" ];
-    #   serviceConfig = {
-    #     ExecStart = ''${recipe-server}/bin/recipe-ocr-exe'';
-    #   };
-    # };
+      tesseract4 recipe-ocr recipe-site sqlite ];
+
+    # See ./recipe-ocr-service.nix
+    services.recipe-ocr-server = {
+      enable = true;
+      port = 80;
+    };
   };
 }

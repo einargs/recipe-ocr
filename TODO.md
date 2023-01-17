@@ -11,6 +11,8 @@ Pi Deployment
       port, sqlite db file, and static file directory.
 - [ ] write a nice, configurable, nixos module that takes port arguments.
 - [ ] use https.
+- [ ] Look into what user I should run the systemd service as. DynamicUser? See:
+  - https://doc.flyingcircus.io/roles/fc-22.05-production/systemd.html
 - [ ] It looks like systemd has some way to deal with port binding problems, so
   I'd rather just use that. If that doesn't work, there's `setcap`. See:
   - https://superuser.com/questions/710253/allow-non-root-process-to-bind-to-port-80-and-443

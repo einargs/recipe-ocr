@@ -14,6 +14,7 @@
         with nixpkgs.legacyPackages.${system};
         let
           compiler = "ghc902";
+          nodejs = nodejs-16_x;
           hPkgs = haskell.packages.${compiler};
           recipe-ocr = hPkgs.callPackage ./server-package.nix { };
           stack-wrapped = symlinkJoin {
@@ -26,10 +27,13 @@
             '';
           };
           deploy = deploy-rs.defaultPackage.${system};
+          site-dist = import ./recipe-site/site-dist.nix {
+            inherit pkgs system nodejs;
+          };
         in {
           devShells.default = mkShell {
             buildInputs = [ stack-wrapped haskell.compiler.${compiler} sqlite
-              tesseract4 nodejs-16_x cabal2nix zlib deploy ]
+              tesseract4 nodejs cabal2nix zlib deploy node2nix ]
                 ++ (with hPkgs; [
                   ghc ghcid
                   # Required by spacemacs haskell layer
@@ -42,12 +46,15 @@
           };
 
           packages.default = recipe-ocr;
+          packages.server-app = recipe-ocr;
+          packages.site-dist = site-dist;
         });
     in per-system // {
       nixosConfigurations.recipes = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
         specialArgs = {
-          recipe-ocr = self.packages.aarch64-linux.default;
+          recipe-ocr = self.packages.aarch64-linux.server-app;
+          recipe-site = self.packages.aarch64-linux.site-dist;
         };
         modules = [
           # Additional NixOS modules, like Home Manager or personal modules
