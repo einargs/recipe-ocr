@@ -9,14 +9,24 @@
     bash-prompt = ''\[\033[1;32m\][\[\e]0;\u@\h: \w\a\]dev-shell:\w]\$\[\033[0m\] '';
   };
   outputs = { self, nixpkgs, deploy-rs, flake-utils }:
-    let per-system =
+  let
+    per-system =
       flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
         with nixpkgs.legacyPackages.${system};
         let
           compiler = "ghc902";
           nodejs = nodejs-16_x;
           hPkgs = haskell.packages.${compiler};
-          recipe-ocr = hPkgs.callPackage ./server-package.nix { };
+          recipe-ocr-src = nixpkgs.lib.sourceByRegex ./. [
+            "^Setup.hs$"
+            "^src/?.*"
+            "^app/?.*"
+            "^test/?.*"
+            "^stack.yaml$"
+            "^stack.yaml.lock$"
+            "^package.yaml$"
+          ];
+          recipe-ocr = hPkgs.callCabal2nix "recipe-ocr" recipe-ocr-src { };
           stack-wrapped = symlinkJoin {
             name = "stack";
             paths = [ stack ];

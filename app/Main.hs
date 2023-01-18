@@ -54,6 +54,7 @@ main :: IO ()
 main = do
   putStrLn "Starting"
   cfg <- execParser opts
+  print cfg
   runApp cfg
   where opts = info (config <**> helper)
           (fullDesc <> progDesc "Run a recipe ocr and indexing server")

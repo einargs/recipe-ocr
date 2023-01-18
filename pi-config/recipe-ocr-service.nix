@@ -1,6 +1,8 @@
 {config, pkgs, lib, recipe-ocr, recipe-site, ... }:
 
-let cfg = config.services.recipe-ocr-server; in
+let
+  cfg = config.services.recipe-ocr-server;
+in
 
 with lib;
 
@@ -27,10 +29,10 @@ with lib;
       path = with pkgs; [ tesseract4 ];
       serviceConfig = {
         StateDirectory = "recipe-ocr";
-        ExecStart = ''
-          ${recipe-ocr}/bin/recipe-ocr-exe --port ${builtins.toString cfg.port} \
-            --site ${recipe-site} --db $STATE_DIRECTORY/recipes.db
-        '';
+        ExecStart = "${recipe-ocr}/bin/recipe-ocr-exe"
+          + " --port ${builtins.toString cfg.port}"
+          + " --site ${recipe-site}"
+          + " --db /var/lib/recipe-ocr/recipes.db";
       };
     };
   };

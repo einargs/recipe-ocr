@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, recipe-ocr, recipe-site, ... }: {
   imports = [
     ./recipe-ocr-service.nix
   ];

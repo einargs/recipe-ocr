@@ -29,6 +29,7 @@ import Servant.Server
 import qualified Data.Pool as Pool
 
 data EnvConfig = Production | Development
+  deriving Show
 
 data Config = Config
   { sqliteFile :: Text
@@ -36,7 +37,7 @@ data Config = Config
   , webAppDir :: FilePath
   , serveSiteDir :: Bool
   , envConfig :: EnvConfig
-  }
+  } deriving Show
 
 data AppEnv = AppEnv
   { envPool :: ConnectionPool
