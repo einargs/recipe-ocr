@@ -8,19 +8,22 @@
     <template #header-right>
       <el-button
         @click="goToAdd"
+        size="large"
         type="primary">Add Recipe</el-button>
     </template>
     <div class="search-inputs">
-      <el-input v-model="query" placeholder="Search..." @change="search" />
+      <el-input v-model="query" size="large"
+        placeholder="Search..." @change="search" />
       <el-tooltip class="tooltip" effect="dark"
         placement="bottom" content="comma separated list">
-        <el-input v-model="tagString" placeholder="Tags..." @change="search" />
+        <el-input v-model="tagString" size="large"
+          placeholder="Tags..." @change="search" />
       </el-tooltip>
     </div>
       <!-- element-loading-text="Loading..."
       element-loading-background="rgba(0,0,0,0.8)" -->
     <div
-      v-loading="loading"
+      v-loading.fullscreen.lock="loading"
       class="recipe-list">
       <div
         v-for="recipe in recipes"
@@ -31,11 +34,13 @@
         <el-button-group>
           <el-button
             @click.stop="editRecipe(recipe)"
+            size="large"
             circle>
             <el-icon><i-ep-edit /></el-icon>
           </el-button>
           <el-button
             @click.stop="deleteRecipe(recipe)"
+            size="large"
             circle>
             <el-icon><i-ep-delete /></el-icon>
           </el-button>
@@ -46,6 +51,7 @@
       :currentPage="page"
       :page-size="20"
       :total="total"
+      class="pagination"
       @update:current-page="search"
       layout="prev, pager, next" >
     </el-pagination>
@@ -149,5 +155,12 @@ export default {
   flex-direction: column;
   align-items: center;
   row-gap: 10px;
+}
+
+.pagination {
+  align-self: center;
+  --el-pagination-font-size: 18px;
+  --el-pagination-button-width: 36px;
+  --el-pagination-button-height: 36px;
 }
 </style>

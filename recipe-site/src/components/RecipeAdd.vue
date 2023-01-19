@@ -17,12 +17,12 @@
           message: 'Please input recipe name',
           trigger: 'blur'
         }]">
-        <el-input v-model="form.name" />
+        <el-input size="large" v-model="form.name" />
       </el-form-item>
       <el-form-item label="Tags" prop="tags">
         <el-tooltip class="tooltip" effect="dark"
           placement="bottom" content="comma separated list">
-          <el-input v-model="form.tags" />
+          <el-input size="large" v-model="form.tags" />
         </el-tooltip>
       </el-form-item>
     </el-form>
@@ -95,6 +95,8 @@ export default {
 <style>
 .create-button {
   font-size: 1.6em;
+  /* Sets it to work based on the font-size of the icon */
+  --el-button-size: auto;
   position: fixed;
   bottom: 32px;
   right: 32px;

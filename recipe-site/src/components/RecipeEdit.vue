@@ -23,12 +23,12 @@
           message: 'Please input recipe name',
           trigger: 'blur'
         }]">
-        <el-input v-model="recipe.name" />
+        <el-input size="large" v-model="recipe.name" />
       </el-form-item>
       <el-form-item label="Tags" prop="tags">
         <el-tooltip class="tooltip" effect="dark"
           placement="bottom" content="comma separated list">
-          <el-input v-model="recipe.tags" />
+          <el-input size="large" v-model="recipe.tags" />
         </el-tooltip>
       </el-form-item>
     </el-form>
@@ -118,19 +118,10 @@ export default {
 </script>
 
 <style>
-.image-buttons {
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: center;
-}
-.image-buttons .el-button {
-  margin: 0px;
-}
-.image-buttons .el-button .el-icon {
-  font-size: 20px;
-}
 .save-button {
   font-size: 1.6em;
+  /* Sets it to work based on the font-size of the icon */
+  --el-button-size: auto;
   position: fixed;
   bottom: 32px;
   right: 32px;

@@ -8,16 +8,20 @@
           :lg="{span: 2, offset: 4}"
           >
           <div class="image-buttons">
-            <el-button type="text" round
+            <el-button text round
               @click="moveImage(idx, idx-1)"
+              size="large"
               :disabled="idx == 0">
               <el-icon><i-ep-caret-top /></el-icon>
             </el-button>
-            <el-button type="text" round @click="deleteImage(idx)">
+            <el-button text round type="primary"
+              size="large"
+              @click="deleteImage(idx)">
               <el-icon><i-ep-delete-filled /></el-icon>
             </el-button>
-            <el-button type="text" round
+            <el-button text round
               @click="moveImage(idx, idx+1)"
+              size="large"
               :disabled="idx == (modelValue.length - 1)">
               <el-icon><i-ep-caret-bottom /></el-icon>
             </el-button>
@@ -53,6 +57,7 @@
 <script>
 export default {
   name: "ImageList",
+  emits: [ "update:modelValue" ],
   props: {
     // An array of objects { url: String, file: File? }
     // The url is required, but file is not.

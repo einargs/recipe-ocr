@@ -19,6 +19,8 @@ Pi Deployment
 Feedback
 - [ ] There's definitiely a problem with the image list where deleting the first
   image deletes the second.
+  - I think it might be a cache problem. I'm going to switch to instead loading
+    images by hashes.
 - [ ] I think there's a bug where after changing image order the client doesn't
   properly update even though the server should be right.
 - [X] Move the recipe saving indicator to show up in the middle of the screen.

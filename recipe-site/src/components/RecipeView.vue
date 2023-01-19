@@ -11,13 +11,14 @@
     <template #header-right>
       <el-button
         @click="goToEdit"
+        size="large"
         type="primary">Edit</el-button>
     </template>
+    <h1 class="title">{{recipe.name}}</h1>
     <el-descriptions
       class="recipe-desc"
-      :title="recipe.name"
       border>
-      <el-descriptions-item label="Tags">
+      <el-descriptions-item class-name="tag-content" label-class-name="tag-label" label="Tags">
         {{tagString}}
       </el-descriptions-item>
     </el-descriptions>
@@ -33,7 +34,7 @@
         </el-col>
       </el-row>
     </div>
-    <el-collapse>
+    <el-collapse class="ocr-content">
       <el-collapse-item title="Content">
         <p v-for="(text, i) in paragraphs" :key="i">{{text}}</p>
       </el-collapse-item>
@@ -83,7 +84,26 @@ export default {
 </script>
 
 <style>
+.title {
+
+}
+
 .recipe-desc {
   margin-bottom: 24px;
+}
+
+.tag-label {
+  width: 10%;
+  font-size: 18px !important;
+}
+
+.tag-content {
+  font-size: 18px !important;
+}
+
+.ocr-content {
+  --el-collapse-header-font-size: var(--el-font-size-large);
+  --el-collapse-content-font-size: 16px;
+
 }
 </style>

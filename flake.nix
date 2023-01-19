@@ -15,7 +15,7 @@
         with nixpkgs.legacyPackages.${system};
         let
           compiler = "ghc902";
-          nodejs = nodejs-16_x;
+          nodejs = nodejs-18_x;
           hPkgs = haskell.packages.${compiler};
           recipe-ocr-src = nixpkgs.lib.sourceByRegex ./. [
             "^Setup.hs$"

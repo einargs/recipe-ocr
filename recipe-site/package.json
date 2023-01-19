@@ -10,20 +10,20 @@
   "dependencies": {
     "@element-plus/icons-vue": "^0.2.6",
     "core-js": "^3.6.5",
-    "element-plus": "^1.2.0-beta.6",
-    "vue": "^3.0.0",
-    "vue-router": "^4.0.12"
+    "element-plus": "^2.0.0",
+    "vue": "^3.2.45",
+    "vue-router": "^4.1.0"
   },
   "devDependencies": {
     "@iconify-json/ep": "^1.0.4",
     "@iconify-json/mdi": "^1.0.14",
-    "@vitejs/plugin-vue": "^2.1.0",
-    "babel-eslint": "^10.1.0",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "@babel/eslint-parser": "^7.19.0",
     "unplugin-auto-import": "^0.5.3",
     "unplugin-icons": "^0.13.0",
     "unplugin-vue-components": "^0.17.9",
-    "vite": "^2.7.13",
-    "vite-plugin-inspect": "^0.3.13"
+    "vite": "^4.0.4",
+    "vite-plugin-inspect": "^0.7.14"
   },
   "eslintConfig": {
     "root": true,
@@ -34,9 +34,7 @@
       "plugin:vue/vue3-essential",
       "eslint:recommended"
     ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
+    "parser": "@babel/eslint-parser",
     "rules": {}
   },
   "browserslist": [
