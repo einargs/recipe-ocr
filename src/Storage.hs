@@ -85,9 +85,9 @@ migrationIO AppEnv{envPool} =
     triggerMigration "db_recipe_ai" "INSERT"
       "INSERT INTO fts_idx(rowid, body) VALUES (new.id, new.body);"
     triggerMigration "db_recipe_ad" "DELETE"
-      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', new.id, new.body);"
+      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', old.id, old.body);"
     triggerMigration "db_recipe_au" "UPDATE"
-      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', new.id, new.body);\n\
+      "INSERT INTO fts_idx(fts_idx, rowid, body) VALUES ('DELETE', old.id, old.body);\n\
       \INSERT INTO fts_idx(rowid, body) VALUES (new.id, new.body);"
   where
     triggerMigration name form body = addMigration False $ T.concat

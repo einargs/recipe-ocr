@@ -1,5 +1,7 @@
 <template>
-  <page-skeleton>
+  <page-skeleton
+    v-loading.fullscreen.lock="saving"
+    element-loading-text="saving">
     <template #breadcrumbs>
       <el-breadcrumb-item :to="{ name: 'recipe-list' }">
         My Recipes
@@ -36,11 +38,11 @@
     <el-button
       type="primary"
       size="large"
-      :loading="saving"
+      :disabled="saving"
       class="save-button"
       circle
       @click="save">
-      <el-icon v-if="!saving"><i-mdi-content-save /></el-icon>
+      <el-icon><i-mdi-content-save /></el-icon>
     </el-button>
   </page-skeleton>
 </template>
@@ -65,6 +67,9 @@ export default {
   },
   methods: {
     async save() {
+      if (this.$data.saving) {
+        return
+      }
       this.$data.saving = true
 
       let isValid = false

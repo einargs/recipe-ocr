@@ -1,5 +1,7 @@
 <template>
-  <page-skeleton>
+  <page-skeleton
+    v-loading.fullscreen.lock="submitting"
+    element-loading-text="saving">
     <template #breadcrumbs>
       <el-breadcrumb-item :to="{ name: 'recipe-list' }">
         My Recipes
@@ -29,6 +31,7 @@
       type="primary"
       size="large"
       class="create-button"
+      :disabled="submitting"
       circle
       @click="onSubmit">
       <el-icon><i-mdi-content-save /></el-icon>
@@ -51,10 +54,16 @@ export default {
         tags: "",
       },
       fileList: [],
+      submitting: false,
     }
   },
   methods: {
     async onSubmit() {
+      if (this.$data.submitting) {
+        return
+      }
+      this.$data.submitting = true
+
       let isValid = false
 
       try {
@@ -77,6 +86,7 @@ export default {
           ElMessage.error("An error occured uploading the recipe. Check your network")
         }
       }
+      this.$data.submitting = false
     },
   },
 }

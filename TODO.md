@@ -5,11 +5,9 @@ Nixos
   dev sell every time.
 
 Pi Deployment
-- [ ] build and package up the production distribution of the vue app using nix
-      so it can be included in the raspberry pi nixos thing.
-- [X] rewrite the server to take commandline arguments determining production,
-      port, sqlite db file, and static file directory.
-- [ ] write a nice, configurable, nixos module that takes port arguments.
+- [X] build and package up the production distribution of the vue app using nix
+  so it can be included in the raspberry pi nixos thing.
+- [X] write a nice, configurable, nixos module that takes port arguments.
 - [ ] use https.
 - [ ] Look into what user I should run the systemd service as. DynamicUser? See:
   - https://doc.flyingcircus.io/roles/fc-22.05-production/systemd.html
@@ -17,21 +15,15 @@ Pi Deployment
   I'd rather just use that. If that doesn't work, there's `setcap`. See:
   - https://superuser.com/questions/710253/allow-non-root-process-to-bind-to-port-80-and-443
   - https://github.com/NixOS/nixpkgs/issues/11908
-- [X] Because the pi config is a separate flake it's caching the main app.
-- [X] Builtin migrations for adding the search index.
 
 Feedback
-- [ ] Move the recipe saving indicator to show up in the middle of the screen.
-- [ ] Disable the save button while uploading a recipe.
-- [X] Tags can't be searched.
-- [ ] Make text in content field bigger.
+- [ ] There's definitiely a problem with the image list where deleting the first
+  image deletes the second.
 - [ ] I think there's a bug where after changing image order the client doesn't
   properly update even though the server should be right.
-- [X] OCR caching implemented so that it doesn't OCR every image on every
-  change.
-- [X] Tags aren't being saved. It looks like there's an SQL error involving
-  syntax somehow???
-- [X] can't delete recipes either.
+- [X] Move the recipe saving indicator to show up in the middle of the screen.
+- [X] Disable the save button while uploading a recipe.
+- [ ] Make text in content field bigger.
 - [ ] Tesseract doesn't have a specified dpi?
 - [ ] Don't log the whole image and text.
 - [ ] Tesseract 5 is out.
