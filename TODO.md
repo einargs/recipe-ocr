@@ -5,9 +5,6 @@ Nixos
   dev sell every time.
 
 Pi Deployment
-- [X] build and package up the production distribution of the vue app using nix
-  so it can be included in the raspberry pi nixos thing.
-- [X] write a nice, configurable, nixos module that takes port arguments.
 - [ ] use https.
 - [ ] Look into what user I should run the systemd service as. DynamicUser? See:
   - https://doc.flyingcircus.io/roles/fc-22.05-production/systemd.html
@@ -17,15 +14,6 @@ Pi Deployment
   - https://github.com/NixOS/nixpkgs/issues/11908
 
 Feedback
-- [ ] There's definitiely a problem with the image list where deleting the first
-  image deletes the second.
-  - I think it might be a cache problem. I'm going to switch to instead loading
-    images by hashes.
-- [ ] I think there's a bug where after changing image order the client doesn't
-  properly update even though the server should be right.
-- [X] Move the recipe saving indicator to show up in the middle of the screen.
-- [X] Disable the save button while uploading a recipe.
-- [ ] Make text in content field bigger.
 - [ ] Tesseract doesn't have a specified dpi?
 - [ ] Don't log the whole image and text.
 - [ ] Tesseract 5 is out.

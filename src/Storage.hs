@@ -4,7 +4,7 @@ module Storage
   , RecipeSearch(..)
   , getRecipe
   , insertRecipe
-  , getRecipeImage
+  , getRecipeImageData
   , updateRecipe
   , deleteRecipe
   , migrationIO
@@ -96,8 +96,10 @@ migrationIO AppEnv{envPool} =
       
 
 toRecipeImage :: DbImage -> RecipeImage
-toRecipeImage DbImage {dbImageData, dbImageExt} =
-  RecipeImage {recipeImageExt = dbImageExt, recipeImageData = dbImageData}
+toRecipeImage DbImage {..} = RecipeImage
+  { recipeImageExt = dbImageExt
+  , recipeImageHash = ImageHash dbImageHash
+  }
 
 loadFullRecipe
   :: (MonadIO m, Backend backend '[DbTagging, DbTag, DbImage])
@@ -284,19 +286,19 @@ insertRecipe PreRecipe
         , recipeImages = toRecipeImage . entityVal <$> images
         }
 
-getRecipeImage :: RecipeId -> Int -> App (Maybe RecipeImage)
-getRecipeImage (RecipeId rid) idx = runDB do
+getRecipeImageData :: RecipeId -> ImageHash -> App (Maybe ByteString)
+getRecipeImageData (RecipeId rid) (ImageHash hash) = runDB do
   mbDbImage <- selectOne do
     (images :& imageIdx) <-
       from $ table @DbImage
       `innerJoin` table @DbImageIdx
       `on` (\(images :& imageIdx) ->
         images ^. DbImageId ==. imageIdx ^. DbImageIdxImage)
-    where_ $ imageIdx ^. DbImageIdxIndex ==. val idx
+    where_ $ images ^. DbImageHash ==. val hash
       &&. imageIdx ^. DbImageIdxRecipe ==. valkey rid
     pure images
 
-  pure $ toRecipeImage . entityVal <$> mbDbImage
+  pure $ dbImageData . entityVal <$> mbDbImage
 
 deleteRecipe :: RecipeId -> App ()
 deleteRecipe (RecipeId rid) = runDB do

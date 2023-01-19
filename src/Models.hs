@@ -3,6 +3,7 @@ module Models
   ( RecipeImage(..)
   , Recipe(..)
   , RecipeId(..)
+  , ImageHash(..)
   , PreRecipe(..)
   , PreImage(..)
   , RecipeOut(..)
@@ -36,7 +37,7 @@ stripPrefix prefixStr = lower1 . drop (length prefixStr)
 
 data RecipeImage = RecipeImage
   { recipeImageExt :: !Text
-  , recipeImageData :: !ByteString
+  , recipeImageHash :: !ImageHash
   }
   deriving Show
 
@@ -65,13 +66,13 @@ toRecipeOut Recipe {..} = RecipeOut
   , recipeOutName = recipeName
   , recipeOutBody = recipeBody
   , recipeOutTags = recipeTags
-  , recipeOutImages = imap imgUrl recipeImages
+  , recipeOutImages = imgUrl <$> recipeImages
   }
-  where imgUrl i RecipeImage {..} = T.concat
+  where imgUrl RecipeImage {..} = T.concat
           [ "/api/recipes/"
           , T.pack $ show $ rawRecipeId recipeId
           , "/images/"
-          , T.pack $ show i
+          , T.pack $ show $ rawImageHash recipeImageHash
           --, recipeImageExt
           ]
 
@@ -127,3 +128,8 @@ newtype RecipeId = RecipeId { rawRecipeId :: Int64 }
   deriving (Show, Eq, Ord)
   deriving (FromHttpApiData) via (Int64)
   deriving (ToJSON) via (Int64)
+
+newtype ImageHash = ImageHash { rawImageHash :: Int }
+  deriving (Show, Eq, Ord)
+  deriving (FromHttpApiData) via (Int)
+  deriving (ToJSON) via (Int)

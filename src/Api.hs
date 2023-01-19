@@ -30,7 +30,7 @@ type RecipeAPI
   :<|> MultipartForm Tmp PreRecipe :> Post '[JSON] RecipeOut
   -- Get the image for a recipe
   :<|> Capture "recipeId" RecipeId :> "images"
-       :> Capture "imageIndex" Int :> Get '[OctetStream] ByteString
+       :> Capture "imageHash" ImageHash :> Get '[OctetStream] ByteString
   -- Put a recipe update
   :<|> Capture "recipeId" RecipeId :> MultipartForm Tmp PreRecipe
        :> PutNoContent
@@ -55,9 +55,9 @@ apiServer = getRecipe
     getRecipe :: RecipeId -> App RecipeOut
     getRecipe = fmap toRecipeOut . unwrapWith404 . S.getRecipe
 
-    getRecipeImage :: RecipeId -> Int -> App ByteString
-    getRecipeImage recId idx = fmap recipeImageData
-      $ unwrapWith404 $ S.getRecipeImage recId idx
+    getRecipeImage :: RecipeId -> ImageHash -> App ByteString
+    getRecipeImage recId hash =
+      unwrapWith404 $ S.getRecipeImageData recId hash
 
     uploadRecipe :: PreRecipe -> App RecipeOut
     uploadRecipe = fmap toRecipeOut . S.insertRecipe
